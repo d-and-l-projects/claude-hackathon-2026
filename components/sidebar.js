@@ -4,7 +4,7 @@ export function renderSidebar(activePage) {
   if (!el) return;
   el.innerHTML = `
     <div class="sidebar-logo" style="cursor:pointer;" onclick="window.location.href='./dashboard.html'">
-      <div class="logo-icon"><i class="ti ti-chart-line"></i></div>
+      <div class="logo-icon"><img src="../images/bear.png" alt=""></div>
       <span class="logo-name">FirstAdvisor</span>
     </div>
     <nav class="sidebar-nav">

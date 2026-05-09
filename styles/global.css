@@ -121,13 +121,14 @@ input, select, textarea { font-family: var(--font-sans); }
 }
 .sidebar-logo {
   padding: 18px 20px 16px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 5px;
 }
 .logo-icon {
-  width: 30px; height: 30px; background: var(--green-600); border-radius: 7px;
+  width: 34px; height: 34px;
   display: flex; align-items: center; justify-content: center;
 }
 .logo-icon i { color: #fff; font-size: 15px; }
+.logo-icon img { width: 34px; height: 34px; object-fit: contain; }
 .logo-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
 
 .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }

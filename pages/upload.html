@@ -180,8 +180,8 @@
   import { SAMPLE_DOCUMENTS } from '../data/sample-documents.js';
 
   // --- Gemini API key — paste your Google AI Studio key here ---
-  const GEMINI_API_KEY = '';   // e.g. 'AIzaSy...'
-  const GEMINI_MODEL = 'gemini-2.0-flash';
+  const GEMINI_API_KEY = 'AIzaSyBASLvxoPRI36AtdDw6XNo2WRtKnW-4PU0';   // e.g. 'AIzaSy...'
+  const GEMINI_MODEL = 'gemini-3-flash-preview';
 
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
@@ -193,7 +193,7 @@
   }
 
   async function callGeminiAPI(file) {
-    if (!GEMINI_API_KEY) throw new Error('No Gemini API key set — add it to upload.html');
+    if (!GEMINI_API_KEY) throw new Error('No Gemini API key set');
     const base64 = await fileToBase64(file);
     const mimeType = file.type || 'image/jpeg';
 

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinLens — Financial Document Clarity</title>
+  <link rel="stylesheet" href="../styles/global.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    body { background: var(--bg-page); }
+
+    .landing-wrap {
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* Nav */
+    .landing-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 48px; background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; }
+    .nav-logo-icon {
+      width: 32px; height: 32px; background: var(--green-600); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-logo-icon i { color: #fff; font-size: 16px; }
+    .nav-logo-text { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .nav-actions { display: flex; gap: 10px; }
+
+    /* Hero */
+    .hero {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 72px 24px 48px;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--green-50); color: var(--green-600);
+      font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 20px;
+      margin-bottom: 24px; border: 1px solid rgba(15, 110, 86, 0.15);
+    }
+    .hero-eyebrow i { font-size: 13px; }
+    .hero h1 {
+      font-size: 44px; font-weight: 600; color: var(--text-primary);
+      max-width: 640px; line-height: 1.2; margin-bottom: 18px;
+    }
+    .hero h1 span { color: var(--green-600); }
+    .hero p {
+      font-size: 16px; color: var(--text-secondary); max-width: 480px;
+      line-height: 1.65; margin-bottom: 36px;
+    }
+    .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    .btn-google {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--bg-surface); border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-lg); padding: 12px 24px;
+      font-size: 14px; font-weight: 500; color: var(--text-primary);
+      cursor: pointer; transition: all 0.15s; font-family: var(--font-sans);
+    }
+    .btn-google:hover { background: var(--bg-muted); box-shadow: var(--shadow-sm); }
+    .btn-google img { width: 18px; height: 18px; }
+
+    .btn-demo {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--green-600); color: #fff; border: none;
+      border-radius: var(--radius-lg); padding: 13px 26px;
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s;
+      font-family: var(--font-sans);
+    }
+    .btn-demo:hover { background: var(--green-800); }
+    .btn-demo i { font-size: 16px; }
+
+    /* Social proof */
+    .hero-note { font-size: 12px; color: var(--text-tertiary); margin-top: 16px; }
+
+    /* Features */
+    .features { padding: 64px 48px; max-width: 1100px; margin: 0 auto; width: 100%; }
+    .features-header { text-align: center; margin-bottom: 40px; }
+    .features-header h2 { font-size: 26px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .features-header p { font-size: 14px; color: var(--text-secondary); }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .feature-card {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 24px;
+    }
+    .feature-icon {
+      width: 40px; height: 40px; border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+    }
+    .feature-icon.green { background: var(--green-50); }
+    .feature-icon.green i { color: var(--green-600); font-size: 20px; }
+    .feature-icon.blue { background: var(--blue-50); }
+    .feature-icon.blue i { color: var(--blue-600); font-size: 20px; }
+    .feature-icon.amber { background: var(--amber-50); }
+    .feature-icon.amber i { color: var(--amber-800); font-size: 20px; }
+    .feature-card h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .feature-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* Examples */
+    .examples { background: var(--bg-surface); border-top: 1px solid var(--border); padding: 56px 48px; }
+    .examples-inner { max-width: 900px; margin: 0 auto; }
+    .examples h2 { font-size: 22px; font-weight: 600; margin-bottom: 28px; text-align: center; }
+    .example-cards { display: flex; flex-direction: column; gap: 14px; }
+    .example-item {
+      display: grid; grid-template-columns: auto 1fr;
+      gap: 14px; padding: 16px 20px; border-radius: var(--radius-lg);
+      background: var(--bg-muted); border: 1px solid var(--border);
+    }
+    .example-icon { font-size: 22px; padding-top: 2px; }
+    .example-text strong { font-size: 13px; color: var(--text-primary); display: block; margin-bottom: 4px; }
+    .example-text p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+    .example-flag {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--red-50); color: var(--red-600); font-size: 11px;
+      padding: 2px 8px; border-radius: 10px; font-weight: 500; margin-top: 6px;
+    }
+    .example-good {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--green-50); color: var(--green-600); font-size: 11px;
+      padding: 2px 8px; border-radius: 10px; font-weight: 500; margin-top: 6px;
+    }
+
+    /* Auth modal */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 999;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg-surface); border-radius: var(--radius-xl);
+      padding: 32px; width: 380px; max-width: 90vw;
+      box-shadow: var(--shadow-md);
+    }
+    .modal h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+    .modal-divider { text-align: center; margin: 16px 0; font-size: 12px; color: var(--text-tertiary); position: relative; }
+    .modal-divider::before, .modal-divider::after {
+      content: ''; position: absolute; top: 50%; width: 42%; height: 1px; background: var(--border);
+    }
+    .modal-divider::before { left: 0; }
+    .modal-divider::after { right: 0; }
+    .modal-close { float: right; background: none; border: none; font-size: 20px; color: var(--text-tertiary); cursor: pointer; margin-top: -4px; }
+    .modal-close:hover { color: var(--text-primary); }
+    .auth-error { background: var(--red-50); color: var(--red-600); font-size: 12px; padding: 10px 14px; border-radius: var(--radius-md); margin-top: 12px; display: none; }
+  </style>
+</head>
+<body>
+<div class="landing-wrap">
+  <!-- Nav -->
+  <nav class="landing-nav">
+    <div class="nav-logo">
+      <div class="nav-logo-icon"><i class="ti ti-chart-line"></i></div>
+      <span class="nav-logo-text">FinLens</span>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-secondary btn-sm" onclick="openAuth()">Sign in</button>
+      <button class="btn btn-primary btn-sm" onclick="openAuth()">Get started free</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-eyebrow"><i class="ti ti-shield-check"></i> AI-powered financial clarity</div>
+    <h1>Understand your financial documents <span>before they become expensive mistakes.</span></h1>
+    <p>Upload any financial document — pay stubs, credit card agreements, loan offers, leases, offer letters — and get plain-English explanations, personalized risk flags, and visual impact projections.</p>
+    <div class="hero-cta">
+      <button class="btn-google" onclick="openAuth()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+        Continue with Google
+      </button>
+      <button class="btn-demo" onclick="demoMode()">
+        <i class="ti ti-file-text"></i> Try with sample document
+      </button>
+    </div>
+    <p class="hero-note">Free to use · No credit card required · Sign in with Google</p>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="features-header">
+      <h2>Not just a chatbot. A financial co-pilot.</h2>
+      <p>Most AI tools wait for you to ask the right question. FinLens finds problems you didn't know to look for.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon green"><i class="ti ti-zoom-scan"></i></div>
+        <h3>Proactive red flag scanner</h3>
+        <p>Automatically spots hidden fees, predatory APRs, missing employer matches, overdraft risks, and suspicious clauses — without you having to know the right vocabulary.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon blue"><i class="ti ti-trending-up"></i></div>
+        <h3>Future cost visualizer</h3>
+        <p>See exactly what happens if you only pay minimums, skip your 401(k), or carry a balance. Compounding made visual — not just a number.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon amber"><i class="ti ti-vocabulary"></i></div>
+        <h3>Click-to-explain glossary</h3>
+        <p>Every highlighted financial term is clickable. Get a plain-English explanation and a simple analogy that makes it stick — even if you've never heard the term before.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Examples -->
+  <section class="examples">
+    <div class="examples-inner">
+      <h2>Real examples of what FinLens catches</h2>
+      <div class="example-cards">
+        <div class="example-item">
+          <div class="example-icon">🧾</div>
+          <div class="example-text">
+            <strong>Pay stub uploaded</strong>
+            <p>AI detected 0% 401(k) contribution with 5% employer match available.</p>
+            <span class="example-flag"><i class="ti ti-alert-circle"></i> You're leaving ~$1,800/year unclaimed</span>
+          </div>
+        </div>
+        <div class="example-item">
+          <div class="example-icon">💳</div>
+          <div class="example-text">
+            <strong>Credit card agreement uploaded</strong>
+            <p>0% APR offer detected — but only for 6 months, reverting to 28.99% after.</p>
+            <span class="example-flag"><i class="ti ti-alert-circle"></i> High risk if carrying a balance</span>
+          </div>
+        </div>
+        <div class="example-item">
+          <div class="example-icon">📋</div>
+          <div class="example-text">
+            <strong>Job offer letter uploaded</strong>
+            <p>Salary compared to market. Benefits quantified. Non-compete clause flagged.</p>
+            <span class="example-good"><i class="ti ti-check"></i> Total comp: ~$117,440 (not just the $95K salary)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Auth Modal -->
+<div class="modal-overlay" id="authModal" onclick="closeAuthOnBg(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuth()">&times;</button>
+    <h2>Welcome to FinLens</h2>
+    <p>Sign in to save your documents, track analysis history, and get personalized recommendations.</p>
+    <button class="btn-google" style="width:100%; justify-content:center;" onclick="signInGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Continue with Google
+    </button>
+    <div id="authError" class="auth-error">
+      <i class="ti ti-alert-circle"></i> <span id="authErrorMsg">Sign-in failed. Please try again.</span>
+    </div>
+    <div class="modal-divider">or</div>
+    <button class="btn btn-ghost" style="width:100%; justify-content:center; font-size:13px;" onclick="demoMode()">
+      Continue without account (demo mode)
+    </button>
+  </div>
+</div>
+
+<!-- Firebase (replace with your config) -->
+<script type="module">
+  import { signInWithGoogle, onAuth } from '../firebase.js';
+
+  // Check if already signed in
+  onAuth((user) => {
+    if (user) {
+      // Already logged in — check if onboarding complete
+      window.location.href = './dashboard.html';
+    }
+  });
+
+  window.signInGoogle = async function() {
+    const result = await signInWithGoogle();
+    if (result.success) {
+      // Check if profile exists
+      const { getProfile } = await import('../firebase.js');
+      const profile = await getProfile(result.user.uid);
+      if (profile && profile.profileCompleted) {
+        window.location.href = './dashboard.html';
+      } else {
+        window.location.href = './onboarding.html';
+      }
+    } else {
+      document.getElementById('authError').style.display = 'block';
+      document.getElementById('authErrorMsg').textContent = result.error || 'Sign-in failed.';
+    }
+  };
+</script>
+
+<script>
+  function openAuth() {
+    document.getElementById('authModal').classList.add('open');
+  }
+  function closeAuth() {
+    document.getElementById('authModal').classList.remove('open');
+  }
+  function closeAuthOnBg(e) {
+    if (e.target === document.getElementById('authModal')) closeAuth();
+  }
+  function demoMode() {
+    // Demo — go straight to upload without auth
+    sessionStorage.setItem('demoMode', 'true');
+    window.location.href = './upload.html';
+  }
+</script>
+</body>
+</html>

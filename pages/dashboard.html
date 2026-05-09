@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinLens — Dashboard</title>
+  <link rel="stylesheet" href="../styles/global.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; }
+    .stat-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .stat-label i { font-size: 14px; }
+    .stat-value { font-size: 26px; font-weight: 600; color: var(--text-primary); }
+    .stat-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+    .stat-card.green .stat-value { color: var(--green-600); }
+    .stat-card.red .stat-value { color: var(--red-600); }
+    .stat-card.amber .stat-value { color: var(--amber-800); }
+
+    .content-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+
+    .doc-list { display: flex; flex-direction: column; gap: 10px; }
+    .doc-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.15s; text-decoration: none; color: inherit; }
+    .doc-item:hover { border-color: var(--green-200); box-shadow: var(--shadow-sm); }
+    .doc-icon { width: 40px; height: 40px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+    .doc-icon.credit { background: var(--blue-50); color: var(--blue-600); }
+    .doc-icon.paystub { background: var(--green-50); color: var(--green-600); }
+    .doc-icon.loan { background: var(--amber-50); color: var(--amber-800); }
+    .doc-icon.offer { background: #F3E8FF; color: #7C3AED; }
+    .doc-icon.lease { background: var(--red-50); color: var(--red-600); }
+    .doc-info { flex: 1; min-width: 0; }
+    .doc-name { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+    .doc-meta { font-size: 11px; color: var(--text-tertiary); }
+    .doc-flags { display: flex; gap: 5px; flex-shrink: 0; }
+    .doc-arrow { color: var(--text-tertiary); font-size: 16px; }
+
+    .quick-actions { display: flex; flex-direction: column; gap: 10px; }
+    .quick-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
+    .quick-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary); }
+    .quick-card p { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5; }
+
+    .profile-summary { font-size: 12px; color: var(--text-secondary); line-height: 1.7; }
+    .profile-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-row span { color: var(--text-primary); font-weight: 500; }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); }
+    .empty-state i { font-size: 36px; margin-bottom: 12px; display: block; }
+    .empty-state p { font-size: 13px; margin-bottom: 16px; }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .section-header h2 { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1 id="welcomeMsg">Your dashboard</h1>
+        <p>Overview of your financial documents and insights</p>
+      </div>
+      <div class="topbar-right">
+        <a href="./upload.html" class="btn btn-primary"><i class="ti ti-plus"></i> New document</a>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label"><i class="ti ti-files"></i> Documents</div>
+          <div class="stat-value" id="statDocs">0</div>
+          <div class="stat-sub">analyzed so far</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label"><i class="ti ti-alert-triangle"></i> Red flags</div>
+          <div class="stat-value" id="statFlags">0</div>
+          <div class="stat-sub">found across docs</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label"><i class="ti ti-clock-dollar"></i> Est. savings</div>
+          <div class="stat-value" id="statSavings">—</div>
+          <div class="stat-sub">if you act on advice</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label"><i class="ti ti-target"></i> Goals set</div>
+          <div class="stat-value" id="statGoals">0</div>
+          <div class="stat-sub">from your profile</div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <!-- Left: doc history -->
+        <div>
+          <div class="section-header">
+            <h2>Recent documents</h2>
+            <a href="./upload.html" class="btn btn-secondary btn-sm"><i class="ti ti-upload"></i> Upload new</a>
+          </div>
+          <div class="doc-list" id="docList">
+            <div class="empty-state">
+              <i class="ti ti-file-off"></i>
+              <p>No documents yet. Upload your first one to get started.</p>
+              <a href="./upload.html" class="btn btn-primary"><i class="ti ti-upload"></i> Upload document</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: quick actions + profile -->
+        <div class="quick-actions">
+          <div class="quick-card">
+            <h3>Your profile</h3>
+            <div id="profileSummary" class="profile-summary">
+              <div class="empty-state" style="padding:16px 0;">
+                <p>No profile yet. <a href="./onboarding.html" style="color:var(--green-600);">Complete onboarding →</a></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="quick-card">
+            <h3>Try a sample document</h3>
+            <p>See how FinLens analyzes real financial documents — no upload needed.</p>
+            <div style="display:flex; flex-direction:column; gap:7px;" id="sampleList"></div>
+          </div>
+
+          <div class="quick-card" style="background: var(--green-50); border-color: var(--green-200);">
+            <h3 style="color:var(--green-800);">Future impact</h3>
+            <p style="color:var(--green-600);">See how your current financial choices compound over time.</p>
+            <a href="./visualizer.html" class="btn btn-primary btn-sm"><i class="ti ti-chart-arrows-vertical"></i> Open visualizer</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { renderSidebar } from '../components/sidebar.js';
+  import { SAMPLE_DOCUMENTS } from '../data/sample-documents.js';
+
+  renderSidebar('dashboard');
+
+  // Welcome message
+  const profile = JSON.parse(sessionStorage.getItem('userProfile') || '{}');
+  try {
+    const { onAuth } = await import('../firebase.js');
+    onAuth(user => {
+      if (user) {
+        const first = (user.displayName || '').split(' ')[0];
+        if (first) document.getElementById('welcomeMsg').textContent = `Welcome back, ${first}`;
+      }
+    });
+  } catch {}
+
+  // Profile summary
+  if (profile && profile.state) {
+    const goals = (profile.selectedGoals || []).join(', ') || 'None set';
+    const income = profile.wageType === 'salary'
+      ? profile.salary
+      : `${profile.hourlyRate}/hr · ${profile.hoursPerWeek} hrs/wk`;
+    document.getElementById('profileSummary').innerHTML = `
+      <div class="profile-row">Income <span>${income || '—'}</span></div>
+      <div class="profile-row">State <span>${profile.state || '—'}</span></div>
+      <div class="profile-row">Employment <span>${profile.empType || '—'}</span></div>
+      <div class="profile-row">Student loans <span>${profile.hasLoans ? 'Yes' : 'No'}</span></div>
+      <div class="profile-row">Goals <span style="text-align:right; max-width:160px;">${goals}</span></div>
+      <div style="margin-top:10px;"><a href="./onboarding.html" style="font-size:12px; color:var(--green-600);">Edit profile →</a></div>
+    `;
+    document.getElementById('statGoals').textContent = (profile.selectedGoals || []).length;
+  }
+
+  // Doc history from sessionStorage
+  const docs = JSON.parse(sessionStorage.getItem('docHistory') || '[]');
+  if (docs.length > 0) {
+    document.getElementById('statDocs').textContent = docs.length;
+    const totalFlags = docs.reduce((a, d) => a + (d.flagCount || 0), 0);
+    document.getElementById('statFlags').textContent = totalFlags;
+    const iconMap = { credit_card: 'credit', paystub: 'paystub', student_loan: 'loan', job_offer: 'offer', apartment_lease: 'lease' };
+    const iconIco = { credit_card: 'ti-credit-card', paystub: 'ti-file-dollar', student_loan: 'ti-school', job_offer: 'ti-briefcase', apartment_lease: 'ti-building' };
+    document.getElementById('docList').innerHTML = docs.map(d => `
+      <a class="doc-item" href="./analysis.html?doc=${d.id}" onclick="sessionStorage.setItem('activeDoc','${d.id}')">
+        <div class="doc-icon ${iconMap[d.id] || 'credit'}"><i class="ti ${iconIco[d.id] || 'ti-file'}"></i></div>
+        <div class="doc-info">
+          <div class="doc-name">${d.name}</div>
+          <div class="doc-meta">${d.type} · ${d.date || 'Today'}</div>
+        </div>
+        <div class="doc-flags">
+          ${d.flagCount > 0 ? `<span class="badge badge-red"><i class="ti ti-alert-triangle"></i> ${d.flagCount}</span>` : ''}
+        </div>
+        <i class="ti ti-chevron-right doc-arrow"></i>
+      </a>
+    `).join('');
+  }
+
+  // Sample list
+  const samples = Object.values(SAMPLE_DOCUMENTS);
+  document.getElementById('sampleList').innerHTML = samples.map(s => `
+    <a class="doc-item" href="./analysis.html" style="padding:10px 12px;"
+       onclick="sessionStorage.setItem('activeDoc','${s.id}'); sessionStorage.setItem('activeDocSample','true')">
+      <div class="doc-icon ${s.id === 'credit_card' ? 'credit' : s.id === 'paystub' ? 'paystub' : s.id === 'student_loan' ? 'loan' : s.id === 'job_offer' ? 'offer' : 'lease'}" style="width:32px;height:32px;font-size:14px;">
+        <i class="ti ${s.icon}"></i>
+      </div>
+      <div class="doc-info">
+        <div class="doc-name" style="font-size:12px;">${s.name}</div>
+      </div>
+      <span class="badge badge-green" style="font-size:10px;">${s.badge}</span>
+    </a>
+  `).join('');
+</script>
+</body>
+</html>

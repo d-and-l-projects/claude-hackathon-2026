@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinLens — Future Impact</title>
+  <link rel="stylesheet" href="../styles/global.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    .page-body { overflow-y: auto; }
+
+    /* Summary strip */
+    .summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+    .strip-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; }
+    .strip-label { font-size: 10px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+    .strip-label i { font-size: 13px; }
+    .strip-value { font-size: 22px; font-weight: 700; }
+    .strip-value.red { color: var(--red-600); }
+    .strip-value.green { color: var(--green-600); }
+    .strip-value.blue { color: var(--blue-600); }
+    .strip-value.amber { color: var(--amber-800); }
+    .strip-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+
+    .viz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+    .viz-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+    .viz-card h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .viz-card .viz-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5; }
+
+    /* Sliders */
+    .slider-group { margin-bottom: 14px; }
+    .slider-row-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .slider-row-label span { font-size: 12px; color: var(--text-secondary); }
+    .slider-row-label strong { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    input[type=range] { width: 100%; accent-color: var(--green-600); height: 4px; cursor: pointer; }
+
+    /* Metric display */
+    .metric-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .metric-box { background: var(--bg-muted); border-radius: var(--radius-md); padding: 14px; text-align: center; }
+    .metric-box .mv { font-size: 22px; font-weight: 700; }
+    .metric-box .ml { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
+    .metric-box.red .mv { color: var(--red-600); }
+    .metric-box.green .mv { color: var(--green-600); }
+    .metric-box.blue .mv { color: var(--blue-600); }
+    .metric-box.amber .mv { color: var(--amber-800); }
+
+    .chart-wrap { position: relative; height: 160px; margin-top: 14px; }
+
+    /* Bar viz */
+    .bar-viz { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .bv-row { display: flex; align-items: center; gap: 10px; }
+    .bv-label { font-size: 11px; color: var(--text-secondary); width: 100px; flex-shrink: 0; }
+    .bv-track { flex: 1; height: 10px; background: var(--bg-muted); border-radius: 5px; overflow: hidden; }
+    .bv-fill { height: 100%; border-radius: 5px; transition: width 0.4s ease; }
+    .bv-fill.green { background: var(--green-200); }
+    .bv-fill.amber { background: var(--amber-400); }
+    .bv-fill.red { background: var(--red-400); }
+    .bv-fill.blue { background: var(--blue-400); }
+    .bv-val { font-size: 11px; color: var(--text-secondary); width: 60px; text-align: right; flex-shrink: 0; }
+
+    /* Warning callout */
+    .callout { border-radius: var(--radius-md); padding: 12px 14px; font-size: 12px; line-height: 1.6; margin-top: 12px; display: flex; gap: 10px; }
+    .callout.red { background: var(--red-50); color: var(--red-800); border: 1px solid #E24B4A22; }
+    .callout.green { background: var(--green-50); color: var(--green-800); border: 1px solid var(--green-200); }
+    .callout.amber { background: var(--amber-50); color: var(--amber-800); border: 1px solid #EF9F2733; }
+    .callout i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* Full-width card */
+    .full-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-top: 18px; }
+    .full-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .full-card .viz-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 18px; }
+    .timeline-wrap { position: relative; height: 200px; }
+    .scenario-legend { display: flex; gap: 20px; margin-bottom: 14px; flex-wrap: wrap; }
+    .leg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+    .leg-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    .back-analysis { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--green-600); cursor: pointer; margin-bottom: 16px; }
+    .back-analysis:hover { color: var(--green-800); }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Future impact visualizer</h1>
+        <p>Adjust sliders to see how today's decisions compound over time</p>
+      </div>
+      <div class="topbar-right">
+        <a href="./analysis.html" class="btn btn-secondary btn-sm"><i class="ti ti-file-analytics"></i> Back to analysis</a>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- Summary strip -->
+      <div class="summary-strip">
+        <div class="strip-card">
+          <div class="strip-label"><i class="ti ti-clock"></i> Debt payoff</div>
+          <div class="strip-value red" id="snapDebt">—</div>
+          <div class="strip-sub" id="snapDebtSub">months remaining</div>
+        </div>
+        <div class="strip-card">
+          <div class="strip-label"><i class="ti ti-cash"></i> Total interest</div>
+          <div class="strip-value amber" id="snapInterest">—</div>
+          <div class="strip-sub">paid over loan life</div>
+        </div>
+        <div class="strip-card">
+          <div class="strip-label"><i class="ti ti-piggy-bank"></i> Savings balance</div>
+          <div class="strip-value green" id="snapSave">—</div>
+          <div class="strip-sub" id="snapSaveSub">projected</div>
+        </div>
+        <div class="strip-card">
+          <div class="strip-label"><i class="ti ti-beach"></i> Retirement nest egg</div>
+          <div class="strip-value blue" id="snapRetire">—</div>
+          <div class="strip-sub">at retirement</div>
+        </div>
+      </div>
+
+      <div class="viz-grid">
+
+        <!-- Credit card debt -->
+        <div class="viz-card">
+          <h3>Credit card debt payoff</h3>
+          <p class="viz-desc">How your monthly payment determines years of debt and total interest paid.</p>
+
+          <div class="slider-group">
+            <div class="slider-row-label"><span>Balance owed</span><strong id="balLabel">$3,500</strong></div>
+            <input type="range" min="500" max="20000" value="3500" step="100" id="balance" oninput="updateAll()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-row-label"><span>Monthly payment</span><strong id="payLabel">$100</strong></div>
+            <input type="range" min="35" max="1000" value="100" step="5" id="payment" oninput="updateAll()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-row-label"><span>APR</span><strong id="aprLabel">29.99%</strong></div>
+            <input type="range" min="5" max="36" value="30" step="0.5" id="apr" oninput="updateAll()">
+          </div>
+
+          <div class="metric-pair">
+            <div class="metric-box red"><div class="mv" id="debtMonths">—</div><div class="ml">months to payoff</div></div>
+            <div class="metric-box amber"><div class="mv" id="debtInterest">—</div><div class="ml">total interest paid</div></div>
+          </div>
+
+          <div class="callout red" id="debtCallout">
+            <i class="ti ti-alert-circle"></i>
+            <span id="debtCalloutText"></span>
+          </div>
+
+          <div class="chart-wrap">
+            <canvas id="debtChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Savings -->
+        <div class="viz-card">
+          <h3>Savings growth</h3>
+          <p class="viz-desc">How consistent saving compounds into a significant balance over time.</p>
+
+          <div class="slider-group">
+            <div class="slider-row-label"><span>Monthly savings</span><strong id="savLabel">$200</strong></div>
+            <input type="range" min="0" max="2000" value="200" step="25" id="savRate" oninput="updateAll()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-row-label"><span>Annual return</span><strong id="returnLabel">4.5%</strong></div>
+            <input type="range" min="0" max="10" value="4.5" step="0.5" id="savReturn" oninput="updateAll()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-row-label"><span>Years</span><strong id="savYearsLabel">10</strong></div>
+            <input type="range" min="1" max="40" value="10" step="1" id="savYears" oninput="updateAll()">
+          </div>
+
+          <div class="metric-pair">
+            <div class="metric-box green"><div class="mv" id="savBalance">—</div><div class="ml">total balance</div></div>
+            <div class="metric-box blue"><div class="mv" id="savEarned">—</div><div class="ml">interest earned</div></div>
+          </div>
+
+          <div class="bar-viz">
+            <div class="bv-row">
+              <div class="bv-label">Your deposits</div>
+              <div class="bv-track"><div class="bv-fill green" id="savDepBar" style="width:70%"></div></div>
+              <div class="bv-val" id="savDepVal">$24,000</div>
+            </div>
+            <div class="bv-row">
+              <div class="bv-label">Interest earned</div>
+              <div class="bv-track"><div class="bv-fill amber" id="savIntBar" style="width:30%"></div></div>
+              <div class="bv-val" id="savIntVal">$8,776</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 401k -->
+        <div class="viz-card">
+          <h3>401(k) retirement impact</h3>
+          <p class="viz-desc">The long-term power of your contribution rate + employer match.</p>
+
+          <div class="slider-group">
+            <div class="slider-row-label"><span>Your contribution rate</span><strong id="k401Label">6%</strong></div>
+            <input type="range" min="0" max="25" value="6" step="1" id="k401Rate" oninput="updateAll()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-row-label"><span>Employer match (up to)</span><strong id="matchLabel">5%</strong></div>
+            <input type="range" min="0" max="10" value="5" step="1" id="matchRate" oninput="updateAll()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-row-label"><span>Annual salary</span><strong id="salLabel">$65,000</strong></div>
+            <input type="range" min="25000" max="200000" value="65000" step="1000" id="salary" oninput="updateAll()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-row-label"><span>Years to retirement</span><strong id="retYearsLabel">30</strong></div>
+            <input type="range" min="5" max="45" value="30" step="1" id="retYears" oninput="updateAll()">
+          </div>
+
+          <div class="metric-pair">
+            <div class="metric-box blue"><div class="mv" id="retBalance">—</div><div class="ml">retirement balance</div></div>
+            <div class="metric-box green"><div class="mv" id="retMatch">—</div><div class="ml">free employer money</div></div>
+          </div>
+
+          <div class="callout" id="retCallout" style="display:none;">
+            <i class="ti ti-alert-circle"></i>
+            <span id="retCalloutText"></span>
+          </div>
+        </div>
+
+        <!-- Minimum payment trap -->
+        <div class="viz-card">
+          <h3>"If you only pay minimums…"</h3>
+          <p class="viz-desc">The true cost of minimum payments vs. paying more — visually.</p>
+
+          <div class="slider-group">
+            <div class="slider-row-label"><span>Credit card balance</span><strong id="minBalLabel">$3,500</strong></div>
+            <input type="range" min="500" max="15000" value="3500" step="100" id="minBal" oninput="updateAll()">
+          </div>
+          <div class="slider-group">
+            <div class="slider-row-label"><span>APR</span><strong id="minAprLabel">29.99%</strong></div>
+            <input type="range" min="10" max="36" value="30" step="0.5" id="minApr" oninput="updateAll()">
+          </div>
+
+          <div class="bar-viz" id="minPayViz">
+            <div class="bv-row">
+              <div class="bv-label">Min only</div>
+              <div class="bv-track"><div class="bv-fill red" id="minOnlyBar" style="width:90%"></div></div>
+              <div class="bv-val" id="minOnlyVal">15 yrs</div>
+            </div>
+            <div class="bv-row">
+              <div class="bv-label">$50 extra/mo</div>
+              <div class="bv-track"><div class="bv-fill amber" id="min50Bar" style="width:60%"></div></div>
+              <div class="bv-val" id="min50Val">5 yrs</div>
+            </div>
+            <div class="bv-row">
+              <div class="bv-label">$100 extra/mo</div>
+              <div class="bv-track"><div class="bv-fill green" id="min100Bar" style="width:30%"></div></div>
+              <div class="bv-val" id="min100Val">3 yrs</div>
+            </div>
+          </div>
+
+          <div class="metric-pair">
+            <div class="metric-box red"><div class="mv" id="minInterest">—</div><div class="ml">interest (min only)</div></div>
+            <div class="metric-box green"><div class="mv" id="savedInterest">—</div><div class="ml">saved w/ $100 extra/mo</div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Full width: debt timeline chart -->
+      <div class="full-card">
+        <h3>Debt timeline — minimum vs. aggressive payment</h3>
+        <p class="viz-desc">Watch your balance drop differently depending on how much you pay each month.</p>
+        <div class="scenario-legend">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--red-400);"></div> Minimum only (~2%)</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--amber-400);"></div> +$50/month</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--green-600);"></div> +$100/month</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--blue-400);"></div> Full payoff in 12 months</div>
+        </div>
+        <div class="timeline-wrap">
+          <canvas id="timelineChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { renderSidebar } from '../components/sidebar.js';
+  renderSidebar('visualizer');
+</script>
+
+<script>
+  let debtChartInst = null;
+  let timelineChartInst = null;
+
+  function fmt(n) { return '$' + Math.abs(Math.round(n)).toLocaleString(); }
+  function fmtK(n) { const r = Math.round(n); return r >= 1000000 ? '$' + (r/1000000).toFixed(1) + 'M' : r >= 1000 ? '$' + Math.round(r/1000) + 'K' : '$' + r; }
+
+  function calcDebt(balance, apr, monthlyPay) {
+    const r = apr / 100 / 12;
+    let bal = balance, months = 0, interest = 0;
+    while (bal > 0.01 && months < 600) {
+      const int = bal * r;
+      interest += int;
+      bal = bal + int - monthlyPay;
+      if (bal < 0) bal = 0;
+      months++;
+    }
+    if (months >= 600) return { months: 600, interest: balance * 10 };
+    return { months, interest };
+  }
+
+  function debtTimeline(balance, apr, payment) {
+    const r = apr / 100 / 12;
+    const pts = [balance];
+    let bal = balance;
+    for (let i = 0; i < 240 && bal > 0.01; i++) {
+      bal = bal * (1 + r) - payment;
+      if (bal < 0) bal = 0;
+      pts.push(Math.round(bal));
+    }
+    return pts;
+  }
+
+  function calcMinPayments(balance, apr) {
+    const r = apr / 100 / 12;
+    let bal = balance, months = 0, interest = 0;
+    while (bal > 0.01 && months < 600) {
+      const int = bal * r;
+      interest += int;
+      const minPay = Math.max(35, bal * 0.02);
+      bal = bal + int - minPay;
+      if (bal < 0) bal = 0;
+      months++;
+    }
+    return { months, interest };
+  }
+
+  function calcFixedExtra(balance, apr, extraPerMonth) {
+    const r = apr / 100 / 12;
+    let bal = balance, months = 0, interest = 0;
+    while (bal > 0.01 && months < 600) {
+      const int = bal * r;
+      interest += int;
+      const minPay = Math.max(35, bal * 0.02) + extraPerMonth;
+      bal = bal + int - minPay;
+      if (bal < 0) bal = 0;
+      months++;
+    }
+    return { months, interest };
+  }
+
+  function updateAll() {
+    // Sliders
+    const bal = +document.getElementById('balance').value;
+    const pay = +document.getElementById('payment').value;
+    const apr = +document.getElementById('apr').value;
+    document.getElementById('balLabel').textContent = fmt(bal);
+    document.getElementById('payLabel').textContent = fmt(pay);
+    document.getElementById('aprLabel').textContent = apr.toFixed(1) + '%';
+
+    const d = calcDebt(bal, apr, pay);
+    const yrs = Math.floor(d.months / 12);
+    const mos = d.months % 12;
+    const debtStr = d.months >= 600 ? '50+ yrs' : yrs > 0 ? `${yrs}y ${mos}m` : `${d.months} mo`;
+    document.getElementById('debtMonths').textContent = debtStr;
+    document.getElementById('debtInterest').textContent = fmtK(d.interest);
+    document.getElementById('snapDebt').textContent = debtStr;
+    document.getElementById('snapInterest').textContent = fmtK(d.interest);
+
+    // Callout
+    const callout = document.getElementById('debtCalloutText');
+    if (d.months >= 600) {
+      callout.textContent = `⚠ At this payment rate, you'll never fully pay off this balance. Increase your monthly payment.`;
+    } else if (d.months > 60) {
+      callout.textContent = `Paying just ${fmt(pay)}/month, you'll be in debt for ${yrs} years and pay ${fmtK(d.interest)} in interest on top of your ${fmt(bal)} balance.`;
+    } else {
+      callout.textContent = `Good pace! You'll pay off ${fmt(bal)} in ${debtStr} and pay ${fmtK(d.interest)} in interest.`;
+      document.getElementById('debtCallout').className = 'callout green';
+    }
+
+    // Debt mini chart (balance over time)
+    const timeline = debtTimeline(bal, apr, pay);
+    const labels = timeline.map((_, i) => i === 0 ? 'Now' : i % 12 === 0 ? `Yr ${i/12}` : '');
+    if (debtChartInst) debtChartInst.destroy();
+    const ctx = document.getElementById('debtChart').getContext('2d');
+    debtChartInst = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: timeline,
+          borderColor: '#E24B4A',
+          backgroundColor: '#FCEBEB88',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt(c.raw) } } },
+        scales: {
+          x: { ticks: { color: '#888780', font: { size: 10 }, maxTicksLimit: 8 }, grid: { display: false } },
+          y: { ticks: { color: '#888780', font: { size: 10 }, callback: v => fmtK(v) }, grid: { color: '#00000008' } }
+        }
+      }
+    });
+
+    // Savings
+    const savAmt = +document.getElementById('savRate').value;
+    const savRet = +document.getElementById('savReturn').value / 100 / 12;
+    const savYrs = +document.getElementById('savYears').value;
+    document.getElementById('savLabel').textContent = fmt(savAmt);
+    document.getElementById('returnLabel').textContent = (+document.getElementById('savReturn').value).toFixed(1) + '%';
+    document.getElementById('savYearsLabel').textContent = savYrs + ' yr' + (savYrs !== 1 ? 's' : '');
+    const n = savYrs * 12;
+    const savFV = savRet > 0 ? savAmt * ((Math.pow(1 + savRet, n) - 1) / savRet) : savAmt * n;
+    const savDep = savAmt * n;
+    const savInt = savFV - savDep;
+    document.getElementById('savBalance').textContent = fmtK(savFV);
+    document.getElementById('savEarned').textContent = fmtK(savInt);
+    document.getElementById('snapSave').textContent = fmtK(savFV);
+    const depPct = savFV > 0 ? Math.round(savDep / savFV * 100) : 0;
+    const intPct = savFV > 0 ? Math.round(savInt / savFV * 100) : 0;
+    document.getElementById('savDepBar').style.width = Math.max(4, depPct) + '%';
+    document.getElementById('savIntBar').style.width = Math.max(4, intPct) + '%';
+    document.getElementById('savDepVal').textContent = fmtK(savDep);
+    document.getElementById('savIntVal').textContent = fmtK(savInt);
+
+    // 401k
+    const k401 = +document.getElementById('k401Rate').value;
+    const matchR = +document.getElementById('matchRate').value;
+    const salaryVal = +document.getElementById('salary').value;
+    const retYrs = +document.getElementById('retYears').value;
+    document.getElementById('k401Label').textContent = k401 + '%';
+    document.getElementById('matchLabel').textContent = matchR + '%';
+    document.getElementById('salLabel').textContent = fmt(salaryVal);
+    document.getElementById('retYearsLabel').textContent = retYrs + ' yrs';
+    const effMatch = Math.min(k401, matchR);
+    const totalContribPct = (k401 + effMatch) / 100;
+    const monthlyContrib = salaryVal * totalContribPct / 12;
+    const retR = 0.07 / 12;
+    const retN = retYrs * 12;
+    const retFV = monthlyContrib * ((Math.pow(1 + retR, retN) - 1) / retR);
+    const freeMatch = salaryVal * (effMatch / 100) * retYrs;
+    document.getElementById('retBalance').textContent = fmtK(retFV);
+    document.getElementById('retMatch').textContent = fmtK(freeMatch);
+    document.getElementById('snapRetire').textContent = fmtK(retFV);
+
+    const retCallout = document.getElementById('retCallout');
+    const retCalloutText = document.getElementById('retCalloutText');
+    if (k401 < matchR) {
+      retCallout.style.display = 'flex';
+      retCallout.className = 'callout amber';
+      retCalloutText.textContent = `You're only contributing ${k401}% but your employer matches up to ${matchR}%. Increase to ${matchR}% to claim ${fmt(salaryVal * matchR / 100)}/year in free money.`;
+    } else if (k401 === 0) {
+      retCallout.style.display = 'flex';
+      retCallout.className = 'callout red';
+      retCalloutText.textContent = `You're contributing nothing! Even 1% gets you started and captures partial employer match.`;
+    } else {
+      retCallout.style.display = 'none';
+    }
+
+    // Min payments comparison
+    const minBal = +document.getElementById('minBal').value;
+    const minApr = +document.getElementById('minApr').value;
+    document.getElementById('minBalLabel').textContent = fmt(minBal);
+    document.getElementById('minAprLabel').textContent = minApr.toFixed(1) + '%';
+
+    const mMin = calcMinPayments(minBal, minApr);
+    const m50 = calcFixedExtra(minBal, minApr, 50);
+    const m100 = calcFixedExtra(minBal, minApr, 100);
+
+    const maxMo = Math.max(mMin.months, 1);
+    document.getElementById('minOnlyBar').style.width = '100%';
+    document.getElementById('min50Bar').style.width = Math.max(8, Math.round(m50.months / maxMo * 100)) + '%';
+    document.getElementById('min100Bar').style.width = Math.max(4, Math.round(m100.months / maxMo * 100)) + '%';
+
+    function moStr(m) { if (m >= 600) return '50+ yrs'; const y = Math.floor(m/12); const mo = m%12; return y > 0 ? `${y}y ${mo}m` : `${m} mo`; }
+    document.getElementById('minOnlyVal').textContent = moStr(mMin.months);
+    document.getElementById('min50Val').textContent = moStr(m50.months);
+    document.getElementById('min100Val').textContent = moStr(m100.months);
+
+    document.getElementById('minInterest').textContent = fmtK(mMin.interest);
+    document.getElementById('savedInterest').textContent = fmtK(mMin.interest - m100.interest);
+    document.getElementById('snapInterest').textContent = fmtK(mMin.interest);
+
+    // Timeline chart
+    const tMin = debtTimeline(minBal, minApr, Math.max(35, minBal * 0.02));
+    const t50 = debtTimeline(minBal, minApr, Math.max(35, minBal * 0.02) + 50);
+    const t100 = debtTimeline(minBal, minApr, Math.max(35, minBal * 0.02) + 100);
+    const tFull = debtTimeline(minBal, minApr, minBal / 12);
+    const maxLen = Math.min(tMin.length, 200);
+    const tlLabels = Array.from({length: maxLen}, (_, i) => i % 12 === 0 ? (i === 0 ? 'Now' : `Yr ${i/12}`) : '');
+
+    if (timelineChartInst) timelineChartInst.destroy();
+    const ctx2 = document.getElementById('timelineChart').getContext('2d');
+    timelineChartInst = new Chart(ctx2, {
+      type: 'line',
+      data: {
+        labels: tlLabels,
+        datasets: [
+          { label: 'Min only', data: tMin.slice(0, maxLen), borderColor: '#E24B4A', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2 },
+          { label: '+$50', data: t50.slice(0, maxLen), borderColor: '#EF9F27', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2 },
+          { label: '+$100', data: t100.slice(0, maxLen), borderColor: '#0F6E56', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2 },
+          { label: '12mo payoff', data: tFull.slice(0, maxLen), borderColor: '#378ADD', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 1.5, borderDash: [4,3] },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmt(c.raw) } } },
+        scales: {
+          x: { ticks: { color: '#888780', font: { size: 10 }, maxTicksLimit: 12 }, grid: { display: false } },
+          y: { ticks: { color: '#888780', font: { size: 10 }, callback: v => fmtK(v) }, grid: { color: '#00000008' } }
+        }
+      }
+    });
+  }
+
+  updateAll();
+</script>
+</body>
+</html>

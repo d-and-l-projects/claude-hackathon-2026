@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinLens — Tell us about yourself</title>
+  <link rel="stylesheet" href="../styles/global.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    body { background: var(--bg-page); display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; padding: 40px 16px; }
+
+    .onboarding-wrap { width: 100%; max-width: 620px; }
+
+    .ob-header { text-align: center; margin-bottom: 32px; }
+    .ob-logo { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+    .ob-logo-icon { width: 28px; height: 28px; background: var(--green-600); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .ob-logo-icon i { color: #fff; font-size: 14px; }
+    .ob-logo-name { font-size: 15px; font-weight: 600; }
+    .ob-header h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+    .ob-header p { font-size: 14px; color: var(--text-secondary); max-width: 400px; margin: 0 auto; line-height: 1.6; }
+
+    /* Step indicator */
+    .steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 32px; }
+    .step-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border-strong); background: var(--bg-surface); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--text-tertiary); transition: all 0.2s; }
+    .step-dot.active { border-color: var(--green-600); background: var(--green-600); color: #fff; }
+    .step-dot.done { border-color: var(--green-600); background: var(--green-50); color: var(--green-600); }
+    .step-line { width: 40px; height: 2px; background: var(--border); }
+    .step-line.done { background: var(--green-600); }
+
+    /* Card */
+    .ob-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 32px; box-shadow: var(--shadow-sm); }
+
+    .section-title { font-size: 13px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* Wage type toggle */
+    .wage-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+    .wage-opt { flex: 1; padding: 10px; background: var(--bg-muted); border: 1.5px solid var(--border); border-radius: var(--radius-md); text-align: center; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+    .wage-opt.active { background: var(--green-50); border-color: var(--green-600); color: var(--green-600); }
+    .wage-extra { display: none; }
+    .wage-extra.visible { display: block; }
+
+    /* Goal chips */
+    .goals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .goal-chip { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--bg-muted); border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+    .goal-chip:hover { border-color: var(--green-200); }
+    .goal-chip.selected { background: var(--green-50); border-color: var(--green-600); color: var(--green-600); font-weight: 500; }
+    .goal-chip i { font-size: 16px; }
+
+    /* Benefits */
+    .benefits-toggle { display: flex; gap: 8px; margin-bottom: 8px; }
+    .benefit-opt { flex: 1; padding: 9px; background: var(--bg-muted); border: 1.5px solid var(--border); border-radius: var(--radius-md); text-align: center; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+    .benefit-opt.active { background: var(--green-50); border-color: var(--green-600); color: var(--green-600); }
+
+    .benefits-input { display: none; margin-top: 10px; }
+    .benefits-input.visible { display: block; }
+    .benefits-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .benefit-chip { display: flex; align-items: center; gap: 5px; padding: 5px 10px; background: var(--green-50); border: 1px solid var(--green-200); border-radius: 20px; font-size: 12px; color: var(--green-600); }
+    .benefit-chip button { background: none; border: none; color: var(--green-600); cursor: pointer; font-size: 13px; padding: 0; line-height: 1; }
+
+    /* Loan yes/no */
+    .yn-toggle { display: flex; gap: 8px; }
+    .yn-opt { flex: 1; padding: 9px; background: var(--bg-muted); border: 1.5px solid var(--border); border-radius: var(--radius-md); text-align: center; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+    .yn-opt.active { background: var(--green-50); border-color: var(--green-600); color: var(--green-600); }
+
+    /* Preview */
+    .income-preview { background: var(--green-50); border: 1px solid var(--green-200); border-radius: var(--radius-lg); padding: 14px 18px; margin-top: 16px; display: none; }
+    .income-preview.visible { display: block; }
+    .income-preview p { font-size: 12px; color: var(--green-600); font-weight: 500; }
+    .income-preview .preview-summary { font-size: 13px; color: var(--green-800); margin-top: 4px; font-weight: 500; }
+    .income-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+    .income-item { text-align: center; }
+    .income-item .val { font-size: 16px; font-weight: 600; color: var(--green-800); }
+    .income-item .lbl { font-size: 10px; color: var(--green-600); margin-top: 2px; }
+
+    .free-goals { width: 100%; margin-top: 10px; background: var(--bg-muted); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 9px 12px; font-size: 13px; color: var(--text-primary); font-family: var(--font-sans); resize: none; height: 70px; }
+    .free-goals:focus { outline: none; border-color: var(--green-600); background: #fff; }
+
+    .ob-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; }
+    .ob-footer .progress-text { font-size: 12px; color: var(--text-tertiary); }
+  </style>
+</head>
+<body>
+<div class="onboarding-wrap">
+  <div class="ob-header">
+    <div class="ob-logo">
+      <div class="ob-logo-icon"><i class="ti ti-chart-line"></i></div>
+      <span class="ob-logo-name">FinLens</span>
+    </div>
+    <h1>Let's personalize your experience</h1>
+    <p>Your answers help us give you relevant analysis, accurate tax estimates, and meaningful risk flags.</p>
+  </div>
+
+  <!-- Step indicator -->
+  <div class="steps">
+    <div class="step-dot active" id="s1">1</div>
+    <div class="step-line" id="l1"></div>
+    <div class="step-dot" id="s2">2</div>
+    <div class="step-line" id="l2"></div>
+    <div class="step-dot" id="s3">3</div>
+  </div>
+
+  <div class="ob-card">
+
+    <!-- STEP 1: Income -->
+    <div id="step1">
+      <div class="section-title">Income & Employment</div>
+
+      <div class="form-group">
+        <label class="form-label">How are you paid?</label>
+        <div class="wage-toggle">
+          <div class="wage-opt active" id="wageTypeSalary" onclick="setWageType('salary')">Salary (annual)</div>
+          <div class="wage-opt" id="wageTypeHourly" onclick="setWageType('hourly')">Hourly</div>
+        </div>
+      </div>
+
+      <div id="salaryInput">
+        <div class="form-group">
+          <label class="form-label">Annual salary</label>
+          <input type="text" class="form-input" id="salary" placeholder="e.g. $65,000" oninput="updatePreview()">
+        </div>
+      </div>
+
+      <div id="hourlyInput" class="wage-extra">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Hourly wage</label>
+            <input type="text" class="form-input" id="hourlyRate" placeholder="e.g. $22.00" oninput="updatePreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Hours per week</label>
+            <input type="number" class="form-input" id="hoursPerWeek" placeholder="e.g. 40" min="1" max="80" oninput="updatePreview()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Do you receive overtime?</label>
+          <div class="yn-toggle">
+            <div class="yn-opt active" id="otYes" onclick="setOT(true)">Yes</div>
+            <div class="yn-opt" id="otNo" onclick="setOT(false)">No</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="income-preview" id="incomePreview">
+        <p>Estimated paycheck breakdown (before deductions)</p>
+        <div class="income-breakdown">
+          <div class="income-item"><div class="val" id="grossMonthly">—</div><div class="lbl">Gross monthly</div></div>
+          <div class="income-item"><div class="val" id="estTaxes">—</div><div class="lbl">Est. taxes</div></div>
+          <div class="income-item"><div class="val" id="takehome">—</div><div class="lbl">Take-home / mo</div></div>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top:14px">
+        <div class="form-group">
+          <label class="form-label">Employment type</label>
+          <select class="form-select" id="empType">
+            <option value="">Select...</option>
+            <option value="w2-ft">Full-time (W-2)</option>
+            <option value="w2-pt">Part-time (W-2)</option>
+            <option value="1099">Self-employed / 1099</option>
+            <option value="gig">Gig worker</option>
+            <option value="student">Student</option>
+            <option value="unemployed">Not currently employed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">State</label>
+          <select class="form-select" id="state">
+            <option value="">Select state...</option>
+            <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option>
+            <option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option>
+            <option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option>
+            <option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option>
+            <option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option>
+            <option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option>
+            <option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option>
+            <option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option>
+            <option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option>
+            <option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option>
+            <option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option>
+            <option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option>
+            <option>Wisconsin</option><option>Wyoming</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Age range</label>
+          <select class="form-select" id="ageRange">
+            <option value="">Select...</option>
+            <option value="18-24">18–24</option>
+            <option value="25-34">25–34</option>
+            <option value="35-44">35–44</option>
+            <option value="45-54">45–54</option>
+            <option value="55-64">55–64</option>
+            <option value="65+">65+</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Student loans?</label>
+          <div class="yn-toggle" style="margin-top:5px;">
+            <div class="yn-opt active" id="loanYes" onclick="setLoans(true)">Yes</div>
+            <div class="yn-opt" id="loanNo" onclick="setLoans(false)">No</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ob-footer">
+        <span class="progress-text">Step 1 of 3</span>
+        <button class="btn btn-primary" onclick="goStep(2)">Continue <i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Benefits & Goals -->
+    <div id="step2" style="display:none;">
+      <div class="section-title">Benefits & Goals</div>
+
+      <div class="form-group">
+        <label class="form-label">Does your employer offer benefits?</label>
+        <div class="benefits-toggle">
+          <div class="benefit-opt active" id="benYes" onclick="setBenefits(true)">Yes</div>
+          <div class="benefit-opt" id="benNo" onclick="setBenefits(false)">No / N/A</div>
+        </div>
+        <div class="benefits-input visible" id="benefitsInput">
+          <input type="text" class="form-input" id="benefitTextInput" placeholder="Type a benefit and press Enter (e.g. 401k, health insurance, HSA...)" onkeydown="addBenefit(event)">
+          <div class="benefits-chips" id="benefitChips"></div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:20px;">
+        <label class="form-label">Financial goals (select all that apply)</label>
+        <div class="goals-grid">
+          <div class="goal-chip" onclick="toggleGoal(this)" data-goal="debt"><i class="ti ti-arrows-minimize"></i> Pay off debt</div>
+          <div class="goal-chip" onclick="toggleGoal(this)" data-goal="save"><i class="ti ti-piggy-bank"></i> Build emergency fund</div>
+          <div class="goal-chip" onclick="toggleGoal(this)" data-goal="invest"><i class="ti ti-trending-up"></i> Start investing</div>
+          <div class="goal-chip" onclick="toggleGoal(this)" data-goal="credit"><i class="ti ti-star"></i> Improve credit score</div>
+          <div class="goal-chip" onclick="toggleGoal(this)" data-goal="home"><i class="ti ti-home"></i> Buy a home</div>
+          <div class="goal-chip" onclick="toggleGoal(this)" data-goal="retire"><i class="ti ti-beach"></i> Retire comfortably</div>
+          <div class="goal-chip" onclick="toggleGoal(this)" data-goal="understand"><i class="ti ti-book"></i> Understand my finances</div>
+          <div class="goal-chip" onclick="toggleGoal(this)" data-goal="business"><i class="ti ti-briefcase"></i> Start a business</div>
+        </div>
+        <textarea class="free-goals" id="freeGoals" placeholder="Anything else? (optional) — e.g. 'save for a car in 2 years', 'pay off student loans faster'"></textarea>
+      </div>
+
+      <div class="ob-footer">
+        <button class="btn btn-ghost" onclick="goStep(1)"><i class="ti ti-arrow-left"></i> Back</button>
+        <button class="btn btn-primary" onclick="goStep(3)">Continue <i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Summary & Upload option -->
+    <div id="step3" style="display:none;">
+      <div class="section-title">You're all set</div>
+
+      <div id="summaryBox" style="background: var(--bg-muted); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.7;"></div>
+
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">Ready to analyze your first document?</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <button class="btn btn-primary" style="justify-content:center;" onclick="saveAndUpload()">
+          <i class="ti ti-upload"></i> Upload a document
+        </button>
+        <button class="btn btn-secondary" style="justify-content:center;" onclick="saveAndDashboard()">
+          <i class="ti ti-layout-dashboard"></i> Go to dashboard
+        </button>
+      </div>
+
+      <div class="ob-footer">
+        <button class="btn btn-ghost" onclick="goStep(2)"><i class="ti ti-arrow-left"></i> Back</button>
+        <span class="progress-text">Step 3 of 3</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { requireAuth, saveProfile } from '../firebase.js';
+
+let currentUser = null;
+let wageType = 'salary';
+let hasOT = true;
+let hasLoans = true;
+let hasBenefits = true;
+let selectedGoals = [];
+let benefits = [];
+
+requireAuth().then(user => { currentUser = user; });
+
+window.setWageType = function(type) {
+  wageType = type;
+  document.getElementById('wageTypeSalary').classList.toggle('active', type === 'salary');
+  document.getElementById('wageTypeHourly').classList.toggle('active', type === 'hourly');
+  document.getElementById('salaryInput').style.display = type === 'salary' ? 'block' : 'none';
+  document.getElementById('hourlyInput').classList.toggle('visible', type === 'hourly');
+  updatePreview();
+};
+
+window.setOT = function(v) {
+  hasOT = v;
+  document.getElementById('otYes').classList.toggle('active', v);
+  document.getElementById('otNo').classList.toggle('active', !v);
+};
+
+window.setLoans = function(v) {
+  hasLoans = v;
+  document.getElementById('loanYes').classList.toggle('active', v);
+  document.getElementById('loanNo').classList.toggle('active', !v);
+};
+
+window.setBenefits = function(v) {
+  hasBenefits = v;
+  document.getElementById('benYes').classList.toggle('active', v);
+  document.getElementById('benNo').classList.toggle('active', !v);
+  document.getElementById('benefitsInput').classList.toggle('visible', v);
+};
+
+window.addBenefit = function(e) {
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim();
+    if (val) {
+      benefits.push(val);
+      renderBenefits();
+      e.target.value = '';
+    }
+  }
+};
+
+function renderBenefits() {
+  const c = document.getElementById('benefitChips');
+  c.innerHTML = benefits.map((b, i) =>
+    `<div class="benefit-chip">${b}<button onclick="removeBenefit(${i})">&times;</button></div>`
+  ).join('');
+}
+
+window.removeBenefit = function(i) {
+  benefits.splice(i, 1);
+  renderBenefits();
+};
+
+window.toggleGoal = function(el) {
+  el.classList.toggle('selected');
+  const g = el.dataset.goal;
+  if (el.classList.contains('selected')) selectedGoals.push(g);
+  else selectedGoals = selectedGoals.filter(x => x !== g);
+};
+
+window.updatePreview = function() {
+  let gross = 0;
+  if (wageType === 'salary') {
+    const raw = document.getElementById('salary').value.replace(/[$,]/g, '');
+    gross = parseFloat(raw) / 12 || 0;
+  } else {
+    const rate = parseFloat(document.getElementById('hourlyRate').value.replace('$','')) || 0;
+    const hrs = parseFloat(document.getElementById('hoursPerWeek').value) || 0;
+    gross = rate * hrs * 52 / 12;
+  }
+  const preview = document.getElementById('incomePreview');
+  if (gross > 0) {
+    preview.classList.add('visible');
+    const taxes = gross * 0.22;
+    const takeHome = gross - taxes;
+    document.getElementById('grossMonthly').textContent = '$' + Math.round(gross).toLocaleString();
+    document.getElementById('estTaxes').textContent = '-$' + Math.round(taxes).toLocaleString();
+    document.getElementById('takehome').textContent = '$' + Math.round(takeHome).toLocaleString();
+  } else {
+    preview.classList.remove('visible');
+  }
+};
+
+window.goStep = function(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('step' + i).style.display = i === n ? 'block' : 'none';
+    const dot = document.getElementById('s' + i);
+    dot.classList.remove('active', 'done');
+    if (i < n) dot.classList.add('done');
+    else if (i === n) dot.classList.add('active');
+    if (i < 3) document.getElementById('l' + i).classList.toggle('done', i < n);
+  });
+  if (n === 3) buildSummary();
+};
+
+function buildSummary() {
+  const state = document.getElementById('state').value || 'your state';
+  const empType = document.getElementById('empType').value || 'an employee';
+  const age = document.getElementById('ageRange').value || '';
+  let income = '';
+  if (wageType === 'salary') {
+    income = document.getElementById('salary').value || 'an unspecified salary';
+  } else {
+    const rate = document.getElementById('hourlyRate').value || '?';
+    const hrs = document.getElementById('hoursPerWeek').value || '?';
+    income = `${rate}/hr working ${hrs} hrs/week`;
+  }
+  const goalLabels = { debt: 'pay off debt', save: 'build savings', invest: 'start investing', credit: 'improve credit', home: 'buy a home', retire: 'retire comfortably', understand: 'understand finances', business: 'start a business' };
+  const goalText = selectedGoals.map(g => goalLabels[g]).join(', ') || 'none specified';
+  const freeText = document.getElementById('freeGoals').value;
+
+  document.getElementById('summaryBox').innerHTML = `
+    <strong style="color: var(--text-primary);">Your profile summary</strong><br>
+    Earning <strong style="color:var(--green-600)">${income}</strong> in <strong style="color:var(--green-600)">${state}</strong> as ${empType}${age ? ', age ' + age : ''}.<br>
+    Student loans: <strong>${hasLoans ? 'Yes' : 'No'}</strong>. Benefits: <strong>${hasBenefits ? benefits.join(', ') || 'Yes' : 'None / N/A'}</strong>.<br>
+    Goals: ${goalText}.${freeText ? '<br>Other: ' + freeText : ''}
+  `;
+}
+
+async function getProfileData() {
+  return {
+    wageType,
+    salary: document.getElementById('salary').value,
+    hourlyRate: document.getElementById('hourlyRate').value,
+    hoursPerWeek: document.getElementById('hoursPerWeek').value,
+    hasOT,
+    empType: document.getElementById('empType').value,
+    state: document.getElementById('state').value,
+    ageRange: document.getElementById('ageRange').value,
+    hasLoans,
+    hasBenefits,
+    benefits,
+    selectedGoals,
+    freeGoals: document.getElementById('freeGoals').value,
+  };
+}
+
+window.saveAndUpload = async function() {
+  const profile = await getProfileData();
+  sessionStorage.setItem('userProfile', JSON.stringify(profile));
+  if (currentUser) await saveProfile(currentUser.uid, profile);
+  window.location.href = './upload.html';
+};
+
+window.saveAndDashboard = async function() {
+  const profile = await getProfileData();
+  sessionStorage.setItem('userProfile', JSON.stringify(profile));
+  if (currentUser) await saveProfile(currentUser.uid, profile);
+  window.location.href = './dashboard.html';
+};
+</script>
+</body>
+</html>

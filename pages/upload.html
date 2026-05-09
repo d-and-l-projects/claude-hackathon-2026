@@ -179,6 +179,65 @@
   import { renderSidebar } from '../components/sidebar.js';
   import { SAMPLE_DOCUMENTS } from '../data/sample-documents.js';
 
+  // --- Gemini API key — paste your Google AI Studio key here ---
+  const GEMINI_API_KEY = '';   // e.g. 'AIzaSy...'
+  const GEMINI_MODEL = 'gemini-2.0-flash';
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function callGeminiAPI(file) {
+    if (!GEMINI_API_KEY) throw new Error('No Gemini API key set — add it to upload.html');
+    const base64 = await fileToBase64(file);
+    const mimeType = file.type || 'image/jpeg';
+
+    const prompt = `Analyze this financial document and return ONLY a JSON object with this exact structure (no markdown, no code fences, no explanation — just raw JSON):
+{
+  "name": "document title",
+  "type": "document type (e.g. Credit Card Agreement, Pay Stub, Loan Offer)",
+  "rawText": "full readable text extracted from the document",
+  "meaning": "2-3 sentence plain-English summary of what this document means for the user",
+  "highlights": [
+    {
+      "term": "exact short phrase from the document",
+      "level": "danger|warn|good",
+      "explanation": "plain-English explanation under 100 words",
+      "analogy": "one-sentence everyday analogy"
+    }
+  ],
+  "actions": ["action 1", "action 2", "action 3"]
+}
+Rules: 3-8 highlights. danger=high risk (fees/penalties/APR/bad clauses). warn=caution items. good=positive terms (employer match, grace periods). Return ONLY valid JSON.`;
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: mimeType, data: base64 } },
+              { text: prompt }
+            ]
+          }]
+        })
+      }
+    );
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Gemini API error'); }
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Could not parse AI response');
+    return JSON.parse(match[0]);
+  }
+
   renderSidebar('upload');
 
   let selectedSampleId = null;
@@ -265,42 +324,57 @@
     const label = document.getElementById('progressLabel');
     progress.classList.add('visible');
 
-    const steps = [
-      [20, 'Reading document...'],
-      [45, 'Identifying financial terms...'],
-      [65, 'Scanning for red flags...'],
-      [85, 'Generating explanations...'],
-      [100, 'Done!']
-    ];
+    sessionStorage.removeItem('aiAnalysis');
 
-    for (const [pct, msg] of steps) {
-      await new Promise(r => setTimeout(r, 420));
-      fill.style.width = pct + '%';
-      label.textContent = msg;
-    }
-
-    // If real file uploaded, try to read it
     if (uploadedFile) {
-      // Detect type by name
-      const name = uploadedFile.name.toLowerCase();
-      let guessedId = 'credit_card';
-      if (name.includes('pay') || name.includes('stub') || name.includes('w2')) guessedId = 'paystub';
-      else if (name.includes('loan') || name.includes('student')) guessedId = 'student_loan';
-      else if (name.includes('offer') || name.includes('job')) guessedId = 'job_offer';
-      else if (name.includes('lease') || name.includes('apartment')) guessedId = 'apartment_lease';
-      sessionStorage.setItem('activeDoc', guessedId);
-      sessionStorage.setItem('uploadedFileName', uploadedFile.name);
-    } else if (selectedSampleId) {
-      sessionStorage.setItem('activeDoc', selectedSampleId);
-    }
+      // Real file — call Gemini API
+      const progressSteps = [[15,'Reading document...'],[40,'Sending to AI...'],[70,'Scanning for red flags...'],[90,'Generating explanations...']];
+      let stepIndex = 0;
+      const ticker = setInterval(() => {
+        if (stepIndex < progressSteps.length) {
+          fill.style.width = progressSteps[stepIndex][0] + '%';
+          label.textContent = progressSteps[stepIndex][1];
+          stepIndex++;
+        }
+      }, 800);
 
-    // Save to history
-    const docId = selectedSampleId || 'credit_card';
-    const doc = SAMPLE_DOCUMENTS[docId];
-    const history = JSON.parse(sessionStorage.getItem('docHistory') || '[]');
-    if (!history.find(d => d.id === docId)) {
-      history.unshift({ id: docId, name: doc.name, type: doc.type, flagCount: doc.highlights.filter(h=>h.level==='danger').length, date: new Date().toLocaleDateString() });
-      sessionStorage.setItem('docHistory', JSON.stringify(history));
+      try {
+        const aiResult = await callGeminiAPI(uploadedFile);
+        clearInterval(ticker);
+        fill.style.width = '100%';
+        label.textContent = 'Done!';
+        aiResult.filename = uploadedFile.name;
+        sessionStorage.setItem('aiAnalysis', JSON.stringify(aiResult));
+        sessionStorage.setItem('uploadedFileName', uploadedFile.name);
+        sessionStorage.setItem('activeDoc', 'ai_upload');
+        const history = JSON.parse(sessionStorage.getItem('docHistory') || '[]');
+        const flagCount = (aiResult.highlights || []).filter(h => h.level === 'danger').length;
+        history.unshift({ id: 'ai_upload', name: aiResult.name || uploadedFile.name, type: aiResult.type || 'Document', flagCount, date: new Date().toLocaleDateString() });
+        sessionStorage.setItem('docHistory', JSON.stringify(history));
+      } catch (err) {
+        clearInterval(ticker);
+        fill.style.width = '0%';
+        label.textContent = 'Error: ' + err.message;
+        label.style.color = 'var(--red-600)';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-sparkles"></i> Retry analysis';
+        return;
+      }
+    } else if (selectedSampleId) {
+      // Sample doc — animate then redirect
+      const steps = [[20,'Reading document...'],[45,'Identifying financial terms...'],[65,'Scanning for red flags...'],[85,'Generating explanations...'],[100,'Done!']];
+      for (const [pct, msg] of steps) {
+        await new Promise(r => setTimeout(r, 420));
+        fill.style.width = pct + '%';
+        label.textContent = msg;
+      }
+      sessionStorage.setItem('activeDoc', selectedSampleId);
+      const doc = SAMPLE_DOCUMENTS[selectedSampleId];
+      const history = JSON.parse(sessionStorage.getItem('docHistory') || '[]');
+      if (!history.find(d => d.id === selectedSampleId)) {
+        history.unshift({ id: selectedSampleId, name: doc.name, type: doc.type, flagCount: doc.highlights.filter(h=>h.level==='danger').length, date: new Date().toLocaleDateString() });
+        sessionStorage.setItem('docHistory', JSON.stringify(history));
+      }
     }
 
     await new Promise(r => setTimeout(r, 300));

@@ -14,7 +14,7 @@ import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, query, 
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: FIREBASE_API_KEY,
+  apiKey: "AIzaSyBVkMHMyiRUDMVP1Un_Jwgprf-drFui0CA",
   authDomain: "firstadvisor-5efe3.firebaseapp.com",
   projectId: "firstadvisor-5efe3",
   storageBucket: "firstadvisor-5efe3.firebasestorage.app",

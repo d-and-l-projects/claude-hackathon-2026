@@ -217,7 +217,8 @@
   renderSidebar('analysis');
 
   const docId = sessionStorage.getItem('activeDoc') || 'credit_card';
-  const doc = SAMPLE_DOCUMENTS[docId] || SAMPLE_DOCUMENTS['credit_card'];
+  const aiDoc = JSON.parse(sessionStorage.getItem('aiAnalysis') || 'null');
+  const doc = aiDoc || SAMPLE_DOCUMENTS[docId] || SAMPLE_DOCUMENTS['credit_card'];
 
   // Set header
   document.getElementById('docName').textContent = sessionStorage.getItem('uploadedFileName') || doc.filename;
@@ -273,7 +274,8 @@
   };
 
   setTimeout(() => {
-    document.getElementById('meaningBody').innerHTML = `<p style="font-size:13px; color:var(--text-secondary); line-height:1.7;">${meanings[docId] || meanings['credit_card']}</p>`;
+    const meaningText = aiDoc ? doc.meaning : (meanings[docId] || meanings['credit_card']);
+    document.getElementById('meaningBody').innerHTML = `<p style="font-size:13px; color:var(--text-secondary); line-height:1.7;">${meaningText}</p>`;
   }, 600);
 
   // Sidebar: Risks
@@ -322,7 +324,7 @@
   };
 
   setTimeout(() => {
-    const acts = actions[docId] || actions['credit_card'];
+    const acts = aiDoc ? (doc.actions || []) : (actions[docId] || actions['credit_card']);
     document.getElementById('actionsBody').innerHTML = acts.map((a, i) => `
       <div class="action-item">
         <div class="action-num">${i+1}</div>

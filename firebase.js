@@ -122,5 +122,5 @@ export async function saveDocument(uid, docData) {
 export async function getUserDocuments(uid) {
   if (!_db) return [];
   const snap = await getDocs(query(collection(_db,"users",uid,"documents"),orderBy("createdAt","desc")));
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
+  return snap.docs.map(d=>({firestoreId:d.id,...d.data()}));
 }

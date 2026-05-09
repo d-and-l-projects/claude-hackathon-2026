@@ -180,9 +180,10 @@
 <script type="module">
   import { renderSidebar } from '../components/sidebar.js';
   import { SAMPLE_DOCUMENTS } from '../data/sample-documents.js';
+  import { requireAuth, getProfile, saveDocument, getUserDocuments } from '../firebase.js';
 
   // --- Gemini API key — paste your Google AI Studio key here ---
-  const GEMINI_API_KEY = 'AIzaSyBASLvxoPRI36AtdDw6XNo2WRtKnW-4PU0';   // e.g. 'AIzaSy...'
+  const GEMINI_API_KEY = 'AIzaSyBHtY72VW1eG6VGKTSUOVylQL92X3LRDOM';   // e.g. 'AIzaSy...'
   const GEMINI_MODEL = 'gemini-3-flash-preview';
 
   function fileToBase64(file) {
@@ -244,6 +245,54 @@ Rules: 3-8 highlights. danger=high risk (fees/penalties/APR/bad clauses). warn=c
 
   let selectedSampleId = null;
   let uploadedFile = null;
+  let currentUser = null;
+
+  const profileCacheKey = uid => `firstAdvisor:${uid || 'demo'}:userProfile`;
+  const docsCacheKey = uid => `firstAdvisor:${uid || 'demo'}:docHistory`;
+
+  function readLocal(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key) || fallback); }
+    catch { return JSON.parse(fallback); }
+  }
+
+  function getDocHistory() {
+    return readLocal(docsCacheKey(currentUser?.uid), '[]');
+  }
+
+  function saveDocHistory(history) {
+    localStorage.setItem(docsCacheKey(currentUser?.uid), JSON.stringify(history));
+    sessionStorage.setItem('docHistory', JSON.stringify(history));
+  }
+
+  function cacheProfile(profile) {
+    if (!profile) return;
+    localStorage.setItem(profileCacheKey(currentUser?.uid), JSON.stringify(profile));
+    sessionStorage.setItem('userProfile', JSON.stringify(profile));
+  }
+
+  function renderProfile(profile) {
+    if (!profile?.state) return;
+    const income = profile.wageType === 'salary' ? profile.salary : `${profile.hourlyRate}/hr`;
+    document.getElementById('profileMini').innerHTML = `
+      <strong style="color:var(--text-primary);">${income}</strong> · ${profile.state} · ${profile.empType || ''}<br>
+      Goals: ${(profile.selectedGoals || []).join(', ') || 'none'}<br>
+      <a href="./onboarding.html" style="color:var(--green-600); margin-top:4px; display:inline-block;">Edit →</a>
+    `;
+  }
+
+  const initUser = requireAuth().then(async user => {
+    currentUser = user;
+    renderProfile(readLocal(profileCacheKey(currentUser?.uid), '{}'));
+    if (currentUser) {
+      const saved = await getProfile(currentUser.uid);
+      if (saved?.profile) {
+        cacheProfile(saved.profile);
+        renderProfile(saved.profile);
+      }
+      const docs = await getUserDocuments(currentUser.uid);
+      saveDocHistory(docs);
+    }
+  });
 
   const iconClass = { credit_card: 'credit', paystub: 'paystub', student_loan: 'loan', job_offer: 'offer', apartment_lease: 'lease' };
 
@@ -317,6 +366,7 @@ Rules: 3-8 highlights. danger=high risk (fees/penalties/APR/bad clauses). warn=c
   }
 
   window.runAnalysis = async function() {
+    await initUser;
     const btn = document.getElementById('analyzeBtn');
     btn.disabled = true;
     btn.innerHTML = '<div class="dot-pulse"><span></span><span></span><span></span></div> Analyzing...';
@@ -346,13 +396,27 @@ Rules: 3-8 highlights. danger=high risk (fees/penalties/APR/bad clauses). warn=c
         fill.style.width = '100%';
         label.textContent = 'Done!';
         aiResult.filename = uploadedFile.name;
+        const flagCount = (aiResult.highlights || []).filter(h => h.level === 'danger').length;
+        const docRecord = {
+          docKey: 'ai_upload',
+          name: aiResult.name || uploadedFile.name,
+          type: aiResult.type || 'Document',
+          filename: uploadedFile.name,
+          flagCount,
+          date: new Date().toLocaleDateString(),
+          analysis: aiResult
+        };
+        if (currentUser) {
+          const savedRef = await saveDocument(currentUser.uid, docRecord);
+          if (savedRef?.id) docRecord.firestoreId = savedRef.id;
+        }
         sessionStorage.setItem('aiAnalysis', JSON.stringify(aiResult));
         sessionStorage.setItem('uploadedFileName', uploadedFile.name);
-        sessionStorage.setItem('activeDoc', 'ai_upload');
-        const history = JSON.parse(sessionStorage.getItem('docHistory') || '[]');
-        const flagCount = (aiResult.highlights || []).filter(h => h.level === 'danger').length;
-        history.unshift({ id: 'ai_upload', name: aiResult.name || uploadedFile.name, type: aiResult.type || 'Document', flagCount, date: new Date().toLocaleDateString() });
-        sessionStorage.setItem('docHistory', JSON.stringify(history));
+        sessionStorage.setItem('activeDoc', docRecord.firestoreId || 'ai_upload');
+        sessionStorage.setItem('activeDocKey', 'ai_upload');
+        const history = getDocHistory();
+        history.unshift(docRecord);
+        saveDocHistory(history);
       } catch (err) {
         clearInterval(ticker);
         fill.style.width = '0%';
@@ -371,11 +435,25 @@ Rules: 3-8 highlights. danger=high risk (fees/penalties/APR/bad clauses). warn=c
         label.textContent = msg;
       }
       sessionStorage.setItem('activeDoc', selectedSampleId);
+      sessionStorage.setItem('activeDocKey', selectedSampleId);
       const doc = SAMPLE_DOCUMENTS[selectedSampleId];
-      const history = JSON.parse(sessionStorage.getItem('docHistory') || '[]');
-      if (!history.find(d => d.id === selectedSampleId)) {
-        history.unshift({ id: selectedSampleId, name: doc.name, type: doc.type, flagCount: doc.highlights.filter(h=>h.level==='danger').length, date: new Date().toLocaleDateString() });
-        sessionStorage.setItem('docHistory', JSON.stringify(history));
+      const history = getDocHistory();
+      if (!history.find(d => (d.docKey || d.id) === selectedSampleId)) {
+        const docRecord = {
+          docKey: selectedSampleId,
+          name: doc.name,
+          type: doc.type,
+          filename: doc.filename,
+          flagCount: doc.highlights.filter(h=>h.level==='danger').length,
+          date: new Date().toLocaleDateString(),
+          isSample: true
+        };
+        if (currentUser) {
+          const savedRef = await saveDocument(currentUser.uid, docRecord);
+          if (savedRef?.id) docRecord.firestoreId = savedRef.id;
+        }
+        history.unshift(docRecord);
+        saveDocHistory(history);
       }
     }
 

@@ -215,15 +215,40 @@
 <script type="module">
   import { renderSidebar } from '../components/sidebar.js';
   import { SAMPLE_DOCUMENTS } from '../data/sample-documents.js';
+  import { requireAuth, getProfile, getUserDocuments } from '../firebase.js';
 
   renderSidebar('analysis');
 
-  const docId = sessionStorage.getItem('activeDoc') || 'credit_card';
-  const aiDoc = JSON.parse(sessionStorage.getItem('aiAnalysis') || 'null');
-  const doc = aiDoc || SAMPLE_DOCUMENTS[docId] || SAMPLE_DOCUMENTS['credit_card'];
+  const currentUser = await requireAuth();
+  const profileCacheKey = uid => `firstAdvisor:${uid || 'demo'}:userProfile`;
+  const docsCacheKey = uid => `firstAdvisor:${uid || 'demo'}:docHistory`;
+  function readLocal(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key) || fallback); }
+    catch { return JSON.parse(fallback); }
+  }
+
+  let docId = sessionStorage.getItem('activeDoc') || 'credit_card';
+  let docKey = sessionStorage.getItem('activeDocKey') || docId;
+  let aiDoc = JSON.parse(sessionStorage.getItem('aiAnalysis') || 'null');
+  let savedDocs = readLocal(docsCacheKey(currentUser?.uid), '[]');
+
+  if (currentUser) {
+    savedDocs = await getUserDocuments(currentUser.uid);
+    localStorage.setItem(docsCacheKey(currentUser.uid), JSON.stringify(savedDocs));
+    sessionStorage.setItem('docHistory', JSON.stringify(savedDocs));
+  }
+
+  const savedDoc = savedDocs.find(d => d.firestoreId === docId || d.docKey === docId || d.docKey === docKey || d.id === docId);
+  if (!aiDoc && savedDoc?.analysis) {
+    aiDoc = savedDoc.analysis;
+    sessionStorage.setItem('aiAnalysis', JSON.stringify(aiDoc));
+  }
+  if (savedDoc?.docKey) docKey = savedDoc.docKey;
+
+  const doc = aiDoc || SAMPLE_DOCUMENTS[docKey] || SAMPLE_DOCUMENTS[docId] || SAMPLE_DOCUMENTS['credit_card'];
 
   // Set header
-  document.getElementById('docName').textContent = sessionStorage.getItem('uploadedFileName') || doc.filename;
+  document.getElementById('docName').textContent = sessionStorage.getItem('uploadedFileName') || savedDoc?.filename || doc.filename;
   document.getElementById('docType').textContent = doc.type;
   document.getElementById('topTitle').textContent = doc.name;
   document.getElementById('topSub').textContent = `${doc.highlights.filter(h=>h.level==='danger').length} red flags · ${doc.highlights.filter(h=>h.level==='warn').length} warnings · ${doc.highlights.filter(h=>h.level==='good').length} positive terms`;
@@ -263,7 +288,15 @@
   };
 
   // Sidebar: "What this means"
-  const profile = JSON.parse(sessionStorage.getItem('userProfile') || '{}');
+  let profile = readLocal(profileCacheKey(currentUser?.uid), '{}');
+  if (currentUser) {
+    const savedProfile = await getProfile(currentUser.uid);
+    if (savedProfile?.profile) {
+      profile = savedProfile.profile;
+      localStorage.setItem(profileCacheKey(currentUser.uid), JSON.stringify(profile));
+      sessionStorage.setItem('userProfile', JSON.stringify(profile));
+    }
+  }
   const stateStr = profile.state || 'your state';
   const incomeStr = profile.wageType === 'salary' ? profile.salary : `${profile.hourlyRate}/hr`;
 
@@ -276,7 +309,7 @@
   };
 
   setTimeout(() => {
-    const meaningText = aiDoc ? doc.meaning : (meanings[docId] || meanings['credit_card']);
+    const meaningText = aiDoc ? doc.meaning : (meanings[docKey] || meanings[docId] || meanings['credit_card']);
     document.getElementById('meaningBody').innerHTML = `<p style="font-size:13px; color:var(--text-secondary); line-height:1.7;">${meaningText}</p>`;
   }, 600);
 
@@ -326,7 +359,7 @@
   };
 
   setTimeout(() => {
-    const acts = aiDoc ? (doc.actions || []) : (actions[docId] || actions['credit_card']);
+    const acts = aiDoc ? (doc.actions || []) : (actions[docKey] || actions[docId] || actions['credit_card']);
     document.getElementById('actionsBody').innerHTML = acts.map((a, i) => `
       <div class="action-item">
         <div class="action-num">${i+1}</div>

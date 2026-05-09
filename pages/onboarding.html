@@ -279,7 +279,7 @@
 </div>
 
 <script type="module">
-import { requireAuth, saveProfile } from '../firebase.js';
+import { requireAuth, saveProfile, getProfile } from '../firebase.js';
 
 let currentUser = null;
 let wageType = 'salary';
@@ -289,7 +289,57 @@ let hasBenefits = true;
 let selectedGoals = [];
 let benefits = [];
 
-requireAuth().then(user => { currentUser = user; });
+const profileCacheKey = uid => `firstAdvisor:${uid || 'demo'}:userProfile`;
+
+function cacheProfile(profile) {
+  sessionStorage.setItem('userProfile', JSON.stringify(profile));
+  localStorage.setItem(profileCacheKey(currentUser?.uid), JSON.stringify(profile));
+}
+
+function loadCachedProfile() {
+  return JSON.parse(
+    localStorage.getItem(profileCacheKey(currentUser?.uid)) ||
+    sessionStorage.getItem('userProfile') ||
+    '{}'
+  );
+}
+
+function populateProfile(profile) {
+  if (!profile || !profile.state) return;
+
+  window.setWageType(profile.wageType || 'salary');
+  document.getElementById('salary').value = profile.salary || '';
+  document.getElementById('hourlyRate').value = profile.hourlyRate || '';
+  document.getElementById('hoursPerWeek').value = profile.hoursPerWeek || '';
+  document.getElementById('empType').value = profile.empType || '';
+  document.getElementById('state').value = profile.state || '';
+  document.getElementById('ageRange').value = profile.ageRange || '';
+  document.getElementById('freeGoals').value = profile.freeGoals || '';
+
+  window.setOT(profile.hasOT ?? true);
+  window.setLoans(profile.hasLoans ?? true);
+  window.setBenefits(profile.hasBenefits ?? true);
+  benefits = [...(profile.benefits || [])];
+  selectedGoals = [...(profile.selectedGoals || [])];
+  renderBenefits();
+  document.querySelectorAll('.goal-chip').forEach(el => {
+    el.classList.toggle('selected', selectedGoals.includes(el.dataset.goal));
+  });
+  updatePreview();
+}
+
+requireAuth().then(async user => {
+  currentUser = user;
+  let profile = loadCachedProfile();
+  if (currentUser) {
+    const saved = await getProfile(currentUser.uid);
+    if (saved?.profile) {
+      profile = saved.profile;
+      cacheProfile(profile);
+    }
+  }
+  populateProfile(profile);
+});
 
 window.setWageType = function(type) {
   wageType = type;
@@ -428,14 +478,14 @@ async function getProfileData() {
 
 window.saveAndUpload = async function() {
   const profile = await getProfileData();
-  sessionStorage.setItem('userProfile', JSON.stringify(profile));
+  cacheProfile(profile);
   if (currentUser) await saveProfile(currentUser.uid, profile);
   window.location.href = './upload.html';
 };
 
 window.saveAndDashboard = async function() {
   const profile = await getProfileData();
-  sessionStorage.setItem('userProfile', JSON.stringify(profile));
+  cacheProfile(profile);
   if (currentUser) await saveProfile(currentUser.uid, profile);
   window.location.href = './dashboard.html';
 };

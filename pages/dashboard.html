@@ -141,11 +141,28 @@
 <script type="module">
   import { renderSidebar } from '../components/sidebar.js';
   import { SAMPLE_DOCUMENTS } from '../data/sample-documents.js';
+  import { requireAuth, getProfile, getUserDocuments } from '../firebase.js';
 
   renderSidebar('dashboard');
 
+  const currentUser = await requireAuth();
+  const profileCacheKey = uid => `firstAdvisor:${uid || 'demo'}:userProfile`;
+  const docsCacheKey = uid => `firstAdvisor:${uid || 'demo'}:docHistory`;
+  function readLocal(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key) || fallback); }
+    catch { return JSON.parse(fallback); }
+  }
+
   // Welcome message
-  const profile = JSON.parse(sessionStorage.getItem('userProfile') || '{}');
+  let profile = readLocal(profileCacheKey(currentUser?.uid), '{}');
+  if (currentUser) {
+    const savedProfile = await getProfile(currentUser.uid);
+    if (savedProfile?.profile) {
+      profile = savedProfile.profile;
+      localStorage.setItem(profileCacheKey(currentUser.uid), JSON.stringify(profile));
+      sessionStorage.setItem('userProfile', JSON.stringify(profile));
+    }
+  }
   try {
     const { onAuth } = await import('../firebase.js');
     onAuth(user => {
@@ -174,16 +191,28 @@
   }
 
   // Doc history from sessionStorage
-  const docs = JSON.parse(sessionStorage.getItem('docHistory') || '[]');
+  let docs = readLocal(docsCacheKey(currentUser?.uid), '[]');
+  if (currentUser) {
+    docs = await getUserDocuments(currentUser.uid);
+    localStorage.setItem(docsCacheKey(currentUser.uid), JSON.stringify(docs));
+    sessionStorage.setItem('docHistory', JSON.stringify(docs));
+  }
   if (docs.length > 0) {
     document.getElementById('statDocs').textContent = docs.length;
     const totalFlags = docs.reduce((a, d) => a + (d.flagCount || 0), 0);
     document.getElementById('statFlags').textContent = totalFlags;
     const iconMap = { credit_card: 'credit', paystub: 'paystub', student_loan: 'loan', job_offer: 'offer', apartment_lease: 'lease' };
     const iconIco = { credit_card: 'ti-credit-card', paystub: 'ti-file-dollar', student_loan: 'ti-school', job_offer: 'ti-briefcase', apartment_lease: 'ti-building' };
-    document.getElementById('docList').innerHTML = docs.map(d => `
-      <a class="doc-item" href="./analysis.html?doc=${d.id}" onclick="sessionStorage.setItem('activeDoc','${d.id}')">
-        <div class="doc-icon ${iconMap[d.id] || 'credit'}"><i class="ti ${iconIco[d.id] || 'ti-file'}"></i></div>
+    document.getElementById('docList').innerHTML = docs.map(d => {
+      const docKey = d.docKey || d.id;
+      const activeId = d.firestoreId || docKey;
+      const analysisScript = d.analysis
+        ? `sessionStorage.setItem('aiAnalysis', decodeURIComponent('${encodeURIComponent(JSON.stringify(d.analysis))}'))`
+        : `sessionStorage.removeItem('aiAnalysis')`;
+      const safeFileName = String(d.filename || d.name || '').replace(/'/g, "\\'");
+      return `
+      <a class="doc-item" href="./analysis.html?doc=${activeId}" onclick="sessionStorage.setItem('activeDoc','${activeId}'); sessionStorage.setItem('activeDocKey','${docKey}'); sessionStorage.setItem('uploadedFileName','${safeFileName}'); ${analysisScript}">
+        <div class="doc-icon ${iconMap[docKey] || 'credit'}"><i class="ti ${iconIco[docKey] || 'ti-file'}"></i></div>
         <div class="doc-info">
           <div class="doc-name">${d.name}</div>
           <div class="doc-meta">${d.type} · ${d.date || 'Today'}</div>
@@ -192,15 +221,15 @@
           ${d.flagCount > 0 ? `<span class="badge badge-red"><i class="ti ti-alert-triangle"></i> ${d.flagCount}</span>` : ''}
         </div>
         <i class="ti ti-chevron-right doc-arrow"></i>
-      </a>
-    `).join('');
+      </a>`;
+    }).join('');
   }
 
   // Sample list
   const samples = Object.values(SAMPLE_DOCUMENTS);
   document.getElementById('sampleList').innerHTML = samples.map(s => `
     <a class="doc-item" href="./analysis.html" style="padding:10px 12px;"
-       onclick="sessionStorage.setItem('activeDoc','${s.id}'); sessionStorage.setItem('activeDocSample','true')">
+       onclick="sessionStorage.setItem('activeDoc','${s.id}'); sessionStorage.setItem('activeDocKey','${s.id}'); sessionStorage.setItem('activeDocSample','true'); sessionStorage.removeItem('aiAnalysis')">
       <div class="doc-icon ${s.id === 'credit_card' ? 'credit' : s.id === 'paystub' ? 'paystub' : s.id === 'student_loan' ? 'loan' : s.id === 'job_offer' ? 'offer' : 'lease'}" style="width:32px;height:32px;font-size:14px;">
         <i class="ti ${s.icon}"></i>
       </div>

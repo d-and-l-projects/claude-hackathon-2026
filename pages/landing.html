@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FinLens — Financial Document Clarity</title>
+  <title>FirstAdvisor — Financial Document Clarity</title>
   <link rel="stylesheet" href="../styles/global.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <style>
@@ -143,7 +143,7 @@
     .modal-divider::after { right: 0; }
     .modal-close { float: right; background: none; border: none; font-size: 20px; color: var(--text-tertiary); cursor: pointer; margin-top: -4px; }
     .modal-close:hover { color: var(--text-primary); }
-    .auth-error { background: var(--red-50); color: var(--red-600); font-size: 12px; padding: 10px 14px; border-radius: var(--radius-md); margin-top: 12px; display: none; }
+    .auth-error { background: var(--red-50); color: var(--red-600); font-size: 12px; padding: 10px 14px; border-radius: var(--radius-md); margin-top: 12px; display: none; align-items: flex-start; gap: 8px; line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -152,7 +152,7 @@
   <nav class="landing-nav">
     <div class="nav-logo">
       <div class="nav-logo-icon"><i class="ti ti-chart-line"></i></div>
-      <span class="nav-logo-text">FinLens</span>
+      <span class="nav-logo-text">FirstAdvisor</span>
     </div>
     <div class="nav-actions">
       <button class="btn btn-secondary btn-sm" onclick="openAuth()">Sign in</button>
@@ -181,7 +181,7 @@
   <section class="features">
     <div class="features-header">
       <h2>Not just a chatbot. A financial co-pilot.</h2>
-      <p>Most AI tools wait for you to ask the right question. FinLens finds problems you didn't know to look for.</p>
+      <p>Most AI tools wait for you to ask the right question. FirstAdvisor finds problems you didn't know to look for.</p>
     </div>
     <div class="features-grid">
       <div class="feature-card">
@@ -205,7 +205,7 @@
   <!-- Examples -->
   <section class="examples">
     <div class="examples-inner">
-      <h2>Real examples of what FinLens catches</h2>
+      <h2>Real examples of what FirstAdvisor catches</h2>
       <div class="example-cards">
         <div class="example-item">
           <div class="example-icon">🧾</div>
@@ -240,7 +240,7 @@
 <div class="modal-overlay" id="authModal" onclick="closeAuthOnBg(event)">
   <div class="modal">
     <button class="modal-close" onclick="closeAuth()">&times;</button>
-    <h2>Welcome to FinLens</h2>
+    <h2>Welcome to FirstAdvisor</h2>
     <p>Sign in to save your documents, track analysis history, and get personalized recommendations.</p>
     <button class="btn-google" style="width:100%; justify-content:center;" onclick="signInGoogle()">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
@@ -256,32 +256,42 @@
   </div>
 </div>
 
-<!-- Firebase (replace with your config) -->
+<!-- Firebase auth -->
 <script type="module">
-  import { signInWithGoogle, onAuth } from '../firebase.js';
+  import { signInWithGoogle, onAuth, checkRedirectResult, getProfile } from '../firebase.js';
 
-  // Check if already signed in
-  onAuth((user) => {
+  // Handle redirect sign-in result (fires when returning from Google redirect)
+  checkRedirectResult().then(async (user) => {
     if (user) {
-      // Already logged in — check if onboarding complete
-      window.location.href = './dashboard.html';
+      const profile = await getProfile(user.uid);
+      window.location.href = (profile && profile.profileCompleted) ? './dashboard.html' : './onboarding.html';
     }
   });
 
+  // If already signed in, skip to dashboard
+  onAuth((user) => {
+    if (user) window.location.href = './dashboard.html';
+  });
+
   window.signInGoogle = async function() {
+    const errEl = document.getElementById('authError');
+    const errMsg = document.getElementById('authErrorMsg');
+    errEl.style.display = 'none';
+
+    const btn = document.querySelector('.modal .btn-google');
+    if (btn) { btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; }
+
     const result = await signInWithGoogle();
-    if (result.success) {
-      // Check if profile exists
-      const { getProfile } = await import('../firebase.js');
+
+    if (result.redirecting) return; // Page will reload with redirect result
+
+    if (result.success && result.user) {
       const profile = await getProfile(result.user.uid);
-      if (profile && profile.profileCompleted) {
-        window.location.href = './dashboard.html';
-      } else {
-        window.location.href = './onboarding.html';
-      }
+      window.location.href = (profile && profile.profileCompleted) ? './dashboard.html' : './onboarding.html';
     } else {
-      document.getElementById('authError').style.display = 'block';
-      document.getElementById('authErrorMsg').textContent = result.error || 'Sign-in failed.';
+      errEl.style.display = 'flex';
+      errMsg.textContent = result.error || 'Sign-in failed. Please try again.';
+      if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
     }
   };
 </script>

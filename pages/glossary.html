@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FirstAdvisor — Financial Glossary</title>
+  <link rel="stylesheet" href="../styles/global.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    .glossary-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; }
+
+    /* Alphabet nav */
+    .alpha-nav { position: sticky; top: 80px; align-self: start; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px; }
+    .alpha-nav h3 { font-size: 11px; font-weight: 700; color: var(--text-tertiary); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 12px; }
+    .alpha-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .alpha-btn { padding: 5px 4px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; background: var(--bg-muted); border: none; font-family: var(--font-sans); transition: all 0.12s; }
+    .alpha-btn:hover { background: var(--green-50); color: var(--green-600); }
+    .alpha-btn.has-terms { color: var(--text-primary); }
+    .alpha-btn.active { background: var(--green-600); color: #fff; }
+
+    .filter-row { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+    .search-wrap { flex: 1; position: relative; min-width: 200px; }
+    .search-wrap i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text-tertiary); pointer-events: none; }
+    .search-wrap input { width: 100%; padding: 9px 12px 9px 34px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 13px; color: var(--text-primary); font-family: var(--font-sans); }
+    .search-wrap input:focus { outline: none; border-color: var(--green-600); }
+    .cat-btn { padding: 7px 14px; border-radius: var(--radius-md); font-size: 12px; font-weight: 500; border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; font-family: var(--font-sans); transition: all 0.12s; }
+    .cat-btn:hover { background: var(--bg-muted); }
+    .cat-btn.active { background: var(--green-50); color: var(--green-600); border-color: var(--green-200); }
+
+    /* Term sections */
+    .letter-section { margin-bottom: 28px; }
+    .letter-header { font-size: 22px; font-weight: 700; color: var(--green-600); border-bottom: 2px solid var(--green-50); padding-bottom: 8px; margin-bottom: 14px; font-family: var(--font-sans); }
+
+    .term-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 10px; transition: border-color 0.15s; }
+    .term-card:hover { border-color: var(--green-200); }
+    .term-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .term-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    .term-cats { display: flex; gap: 5px; flex-wrap: wrap; }
+    .term-definition { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 10px; }
+    .term-analogy { font-size: 12px; color: var(--amber-800); background: var(--amber-50); border-left: 3px solid var(--amber-400); padding: 10px 12px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin-bottom: 10px; line-height: 1.6; display: none; }
+    .term-analogy.visible { display: block; }
+    .term-footer { display: flex; align-items: center; justify-content: space-between; }
+    .term-source { font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; gap: 5px; }
+    .term-source a { color: var(--green-600); text-decoration: none; }
+    .term-source a:hover { text-decoration: underline; }
+    .term-actions { display: flex; gap: 6px; }
+    .analogy-toggle { font-size: 11px; font-weight: 500; color: var(--amber-800); background: var(--amber-50); border: 1px solid #EF9F2733; padding: 4px 10px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: var(--font-sans); }
+    .analogy-toggle i { font-size: 12px; }
+
+    .no-results { text-align: center; padding: 48px 20px; color: var(--text-tertiary); }
+    .no-results i { font-size: 36px; display: block; margin-bottom: 12px; }
+
+    .stats-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; font-size: 12px; color: var(--text-tertiary); }
+    .stats-bar strong { color: var(--text-primary); }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Financial Glossary</h1>
+        <p>Key terms explained — with sources from official government and financial institutions</p>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="glossary-layout">
+
+        <!-- Left: alphabet nav -->
+        <div>
+          <div class="alpha-nav">
+            <h3>Jump to letter</h3>
+            <div class="alpha-grid" id="alphaGrid"></div>
+          </div>
+        </div>
+
+        <!-- Right: terms -->
+        <div>
+          <div class="filter-row">
+            <div class="search-wrap">
+              <i class="ti ti-search"></i>
+              <input type="text" id="searchInput" placeholder="Search terms..." oninput="filterTerms()">
+            </div>
+            <button class="cat-btn active" onclick="setCat('all', this)">All</button>
+            <button class="cat-btn" onclick="setCat('credit', this)">Credit</button>
+            <button class="cat-btn" onclick="setCat('taxes', this)">Taxes</button>
+            <button class="cat-btn" onclick="setCat('investing', this)">Investing</button>
+            <button class="cat-btn" onclick="setCat('loans', this)">Loans</button>
+            <button class="cat-btn" onclick="setCat('employment', this)">Employment</button>
+            <button class="cat-btn" onclick="setCat('insurance', this)">Insurance</button>
+          </div>
+
+          <div class="stats-bar">
+            Showing <strong id="termCount">—</strong> terms · All sourced from official institutions
+          </div>
+
+          <div id="glossaryBody"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { renderSidebar } from '../components/sidebar.js';
+  renderSidebar('glossary');
+</script>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOSSARY DATA
+// Sources: IRS, CFPB, SSA, SEC, DOL, Investopedia (Dotdash Meredith),
+//          Federal Reserve, HUD, NerdWallet editorial
+// ─────────────────────────────────────────────────────────────────────────────
+const TERMS = [
+  // A
+  {
+    term: "Annual Percentage Rate (APR)",
+    letter: "A",
+    cats: ["credit","loans"],
+    definition: "The annual cost of borrowing money, expressed as a percentage. APR includes the interest rate plus any fees, making it a more complete measure of a loan's true cost than the interest rate alone. For credit cards, APR applies when you carry a balance from month to month.",
+    analogy: "If interest rate is the price of milk, APR is the total price including the bag, tax, and delivery fee. It tells you the real cost.",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/ask-cfpb/what-is-the-difference-between-a-loan-s-interest-rate-and-its-apr-en-733/"
+  },
+  {
+    term: "Amortization",
+    letter: "A",
+    cats: ["loans"],
+    definition: "The process of paying off a debt over time through regular payments. Each payment covers both principal (the amount borrowed) and interest. Early in a loan, most of your payment goes to interest; over time, more goes toward principal.",
+    analogy: "Imagine eating a sandwich from the outside in. At first, you're mostly getting bread (interest). Only toward the end are you getting to the good filling (principal).",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/ask-cfpb/what-is-amortization-en-1996/"
+  },
+  {
+    term: "Asset",
+    letter: "A",
+    cats: ["investing"],
+    definition: "Anything of value that you own — cash, investments, real estate, vehicles, or property. Assets appear on the left side of a personal balance sheet and can be used to pay off liabilities (debts).",
+    analogy: "Assets are everything in your bucket. The more you have, the more secure you are.",
+    source: "U.S. Securities and Exchange Commission (SEC) — Investor.gov",
+    url: "https://www.investor.gov/financial-tools-calculators/financial-terms-glossary"
+  },
+  // C
+  {
+    term: "Capital Gains",
+    letter: "C",
+    cats: ["taxes","investing"],
+    definition: "The profit you make when you sell an asset (stocks, real estate, etc.) for more than you paid. Short-term capital gains (assets held under 1 year) are taxed at your ordinary income rate. Long-term gains (held over 1 year) are taxed at lower rates: 0%, 15%, or 20% depending on income.",
+    analogy: "Buy a baseball card for $10, sell it for $50 — that $40 profit is your capital gain. Uncle Sam wants a cut.",
+    source: "IRS — Topic No. 409 Capital Gains and Losses",
+    url: "https://www.irs.gov/taxtopics/tc409"
+  },
+  {
+    term: "Compound Interest",
+    letter: "C",
+    cats: ["credit","loans","investing"],
+    definition: "Interest calculated on both the initial principal and the accumulated interest from prior periods. When saving, compounding works for you. When borrowing, it works against you. The more frequently interest compounds (daily vs. monthly), the more powerful the effect.",
+    analogy: "A snowball rolling downhill — it picks up more snow as it grows, which makes it grow even faster. Your debt (or savings) works exactly the same way.",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/ask-cfpb/what-is-compound-interest-en-45/"
+  },
+  {
+    term: "Credit Score",
+    letter: "C",
+    cats: ["credit"],
+    definition: "A 3-digit number (usually 300–850) that lenders use to evaluate how likely you are to repay debt. FICO scores are the most widely used. Score ranges: Exceptional (800+), Very Good (740–799), Good (670–739), Fair (580–669), Poor (below 580). Affected by payment history (35%), amounts owed (30%), length of history (15%), new credit (10%), and credit mix (10%).",
+    analogy: "Your credit score is your financial GPA — lenders check it before deciding whether to 'admit' you to a loan and at what interest rate.",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/consumer-tools/credit-reports-and-scores/"
+  },
+  {
+    term: "Credit Utilization",
+    letter: "C",
+    cats: ["credit"],
+    definition: "The percentage of your available revolving credit (credit cards) that you're currently using. If you have a $10,000 limit and a $3,000 balance, your utilization is 30%. Experts recommend keeping it below 30% — ideally below 10% — to maximize your credit score.",
+    analogy: "If your credit card is a gas tank, utilization is how full it is. Lenders prefer to see you running at 30% capacity, not nearly on empty — it signals you're not desperate.",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/ask-cfpb/how-do-i-get-and-keep-a-good-credit-score-en-2058/"
+  },
+  // D
+  {
+    term: "Deductible",
+    letter: "D",
+    cats: ["insurance"],
+    definition: "The amount you pay out-of-pocket before your insurance coverage kicks in. Higher deductibles usually mean lower monthly premiums. For example, a $1,500 health insurance deductible means you pay the first $1,500 of medical costs each year before insurance starts covering expenses.",
+    analogy: "The deductible is your 'skin in the game' before insurance steps in. Think of it like a cover charge — you pay to get in, then the club (insurance) covers the drinks (major costs).",
+    source: "Healthcare.gov / U.S. Centers for Medicare & Medicaid Services",
+    url: "https://www.healthcare.gov/glossary/deductible/"
+  },
+  {
+    term: "Default",
+    letter: "D",
+    cats: ["loans","credit"],
+    definition: "Failure to repay a loan according to its terms. For federal student loans, default occurs after 270 days of missed payments. Consequences include: damage to credit score, wage garnishment, tax refund seizure, and loss of eligibility for future federal aid. For mortgages, default can lead to foreclosure.",
+    analogy: "Defaulting on a loan is like walking out of a restaurant without paying. The consequences follow you — they'll send collectors, impact your reputation (credit), and can legally take your paycheck.",
+    source: "U.S. Department of Education — Federal Student Aid",
+    url: "https://studentaid.gov/manage-loans/default"
+  },
+  {
+    term: "Discretionary Income",
+    letter: "D",
+    cats: ["loans","taxes"],
+    definition: "For federal student loan repayment purposes: the difference between your annual income and 150% of the federal poverty guideline for your family size and state. Income-driven repayment plans base your monthly payment on this amount (typically 5–10%).",
+    analogy: "It's the money left over after paying for basic necessities — the government uses this to set your student loan payments so you're not starving to pay your loans.",
+    source: "U.S. Department of Education — Federal Student Aid",
+    url: "https://studentaid.gov/help-center/answers/article/discretionary-income"
+  },
+  // E
+  {
+    term: "Employer Match (401k)",
+    letter: "E",
+    cats: ["investing","employment"],
+    definition: "A benefit where your employer contributes to your 401(k) retirement account based on how much you contribute. Common structure: 'We match 100% of your contributions up to 5% of your salary.' If you earn $60,000 and contribute 5% ($3,000/year), your employer adds $3,000 — that's free money you lose by not contributing.",
+    analogy: "It's a BOGO deal on your future. For every dollar you save for retirement, your employer gives you another one — for free. Not participating is like turning down a 100% instant return on investment.",
+    source: "U.S. Department of Labor — 401(k) Plans",
+    url: "https://www.dol.gov/general/topic/retirement/401kplans"
+  },
+  {
+    term: "Effective Tax Rate",
+    letter: "E",
+    cats: ["taxes"],
+    definition: "The actual percentage of your total income that you pay in taxes — as opposed to your marginal (top bracket) rate. Because the U.S. uses a progressive tax system, only the dollars above each threshold are taxed at each bracket's rate. Someone in the 22% bracket does NOT pay 22% on all their income.",
+    analogy: "Marginal rate is the price of your last dollar earned. Effective rate is what you actually paid divided by what you made. They're very different — most people overestimate their real tax rate.",
+    source: "IRS — Understanding Your Tax Bracket",
+    url: "https://www.irs.gov/newsroom/irs-provides-tax-inflation-adjustments-for-tax-year-2024"
+  },
+  // F
+  {
+    term: "FICA (Federal Insurance Contributions Act)",
+    letter: "F",
+    cats: ["taxes","employment"],
+    definition: "Mandatory payroll taxes that fund Social Security (6.2% on wages up to $168,600 in 2024) and Medicare (1.45% on all wages, plus an extra 0.9% on high earners). Your employer matches these contributions. Self-employed people pay both halves — 15.3% total — called self-employment tax.",
+    analogy: "FICA is like paying dues into two clubs you'll benefit from later: Social Security (retirement/disability income) and Medicare (health coverage after 65). The dues come out before you even see your paycheck.",
+    source: "IRS — FICA & Self-Employment Taxes",
+    url: "https://www.irs.gov/taxtopics/tc751"
+  },
+  {
+    term: "FICO Score",
+    letter: "F",
+    cats: ["credit"],
+    definition: "The most widely used credit scoring model, ranging from 300 to 850. Created by Fair Isaac Corporation. Used by 90% of top lenders. Five factors: Payment History (35%), Amounts Owed (30%), Length of Credit History (15%), New Credit (10%), Credit Mix (10%). A score above 740 typically qualifies for the best interest rates.",
+    analogy: "Think of it like a report card that follows you into adulthood. An A (800+) gets you the best loan rates; a D (below 580) means lenders charge you a premium — or won't lend at all.",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/ask-cfpb/what-is-a-fico-score-en-1883/"
+  },
+  {
+    term: "Foreign Transaction Fee",
+    letter: "F",
+    cats: ["credit"],
+    definition: "A fee charged by a credit card issuer — typically 1–3% — on purchases made outside the U.S. or processed through a foreign bank. This applies even to online purchases on foreign websites. Many travel-focused cards waive this fee entirely.",
+    analogy: "It's a toll booth at the border of your credit card's network. Swipe internationally without a no-FTF card and you're quietly paying 3% extra on everything.",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/ask-cfpb/what-is-a-foreign-transaction-fee-en-2315/"
+  },
+  // G
+  {
+    term: "Grace Period",
+    letter: "G",
+    cats: ["credit","loans"],
+    definition: "For credit cards: the time between the end of a billing cycle and the payment due date (typically 21–25 days) during which you can pay your full balance without incurring interest. If you carry a balance, you lose your grace period and interest accrues from the transaction date. For student loans: a 6-month period after leaving school before payments begin.",
+    analogy: "The grace period is your free pass. Pay your card in full within those 25 days and you've borrowed money for free — like a zero-interest short-term loan.",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/ask-cfpb/what-is-a-grace-period-for-a-credit-card-en-47/"
+  },
+  {
+    term: "Gross Income",
+    letter: "G",
+    cats: ["taxes","employment"],
+    definition: "Your total income before any deductions — taxes, insurance, retirement contributions, etc. Gross income is used to calculate tax liability and qualifications for loans. It's the number on your offer letter or pay stub before anything is subtracted.",
+    analogy: "Gross income is the pizza before any slices are taken. Net income is what's left after taxes, insurance, and other deductions take their pieces.",
+    source: "IRS — Publication 525: Taxable and Nontaxable Income",
+    url: "https://www.irs.gov/publications/p525"
+  },
+  // H
+  {
+    term: "HSA (Health Savings Account)",
+    letter: "H",
+    cats: ["taxes","insurance"],
+    definition: "A tax-advantaged savings account for people enrolled in a High-Deductible Health Plan (HDHP). Contributions are tax-deductible, growth is tax-free, and withdrawals for qualified medical expenses are tax-free — a 'triple tax advantage.' 2024 contribution limits: $4,150 (individual), $8,300 (family). Unused funds roll over every year.",
+    analogy: "An HSA is the Swiss Army knife of accounts. It cuts your taxes going in, while growing, and coming out — as long as you spend it on medical costs. After 65, you can use it for anything (like a 401k).",
+    source: "IRS — Publication 969: HSAs and Other Tax-Favored Health Plans",
+    url: "https://www.irs.gov/publications/p969"
+  },
+  // I
+  {
+    term: "Income-Driven Repayment (IDR)",
+    letter: "I",
+    cats: ["loans"],
+    definition: "A category of federal student loan repayment plans that cap your monthly payments at a percentage of your discretionary income (5–10%). Plans include SAVE, PAYE, IBR, and ICR. After 20–25 years of qualifying payments, the remaining balance is forgiven. SAVE (Saving on a Valuable Education) is currently the most generous plan.",
+    analogy: "IDR is a bungee cord on your loan payments — it stretches when your income is low and contracts when you earn more. You never fall all the way.",
+    source: "U.S. Department of Education — Federal Student Aid",
+    url: "https://studentaid.gov/manage-loans/repayment/plans/income-driven"
+  },
+  {
+    term: "Interest Rate",
+    letter: "I",
+    cats: ["loans","credit"],
+    definition: "The cost of borrowing money, expressed as an annual percentage of the principal. Unlike APR, the interest rate doesn't include fees. For savings accounts, it's the rate at which your money grows. The Federal Reserve sets the federal funds rate, which influences most consumer interest rates.",
+    analogy: "The interest rate is the rent you pay for borrowed money. Borrow $1,000 at 10% for a year — you owe $100 in rent on top of returning the $1,000.",
+    source: "Federal Reserve — Consumer Information",
+    url: "https://www.federalreserve.gov/releases/h15/"
+  },
+  // L
+  {
+    term: "Liability",
+    letter: "L",
+    cats: ["loans","credit"],
+    definition: "A financial obligation or debt — anything you owe to someone else. Common liabilities: mortgage, car loans, student loans, credit card balances. Net worth = Assets minus Liabilities. Reducing liabilities increases your net worth.",
+    analogy: "If assets are what's in your bucket, liabilities are the holes. The bigger the holes, the less you actually keep.",
+    source: "U.S. Securities and Exchange Commission (SEC) — Investor.gov",
+    url: "https://www.investor.gov/financial-tools-calculators/financial-terms-glossary"
+  },
+  {
+    term: "Lien",
+    letter: "L",
+    cats: ["loans"],
+    definition: "A legal claim against an asset, typically used as collateral for a loan. If you default, the lienholder has the right to seize the asset. Common examples: a mortgage is a lien on your home; an auto loan is a lien on your car. Liens appear on title records and must be paid off before selling the asset.",
+    analogy: "A lien is a sticky note on your property that says 'this belongs to the lender until you pay us back.' You can use the house, but you can't fully own it or sell it freely until the note is removed.",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/ask-cfpb/what-is-a-lien-en-1846/"
+  },
+  // M
+  {
+    term: "Marginal Tax Rate",
+    letter: "M",
+    cats: ["taxes"],
+    definition: "The rate you pay on each additional dollar earned — your 'top' tax bracket. The U.S. uses a progressive system: the first $11,600 is taxed at 10%, the next portion at 12%, and so on. Being in the '22% bracket' doesn't mean you pay 22% on everything — only on the portion of income that falls in that range.",
+    analogy: "Imagine a staircase where each step has a different toll. You pay the toll for each step you climb. Reaching a higher step doesn't retroactively change what you paid on lower steps.",
+    source: "IRS — 2024 Tax Brackets",
+    url: "https://www.irs.gov/newsroom/irs-provides-tax-inflation-adjustments-for-tax-year-2024"
+  },
+  {
+    term: "Minimum Payment",
+    letter: "M",
+    cats: ["credit"],
+    definition: "The smallest amount you must pay on a credit card bill to avoid a late fee — typically 2% of the balance or $25–$35, whichever is greater. Paying only minimums on a $3,500 balance at 29.99% APR takes approximately 15 years and costs ~$4,800 in interest. The CARD Act of 2009 requires cards to show how long it takes to pay off the balance with minimum payments.",
+    analogy: "Minimum payments are like bailing a sinking boat with a teaspoon while the boat has a hole. You're working, but you're barely keeping up — and the boat is still sinking.",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/ask-cfpb/what-is-a-minimum-payment-en-49/"
+  },
+  // N
+  {
+    term: "Net Income",
+    letter: "N",
+    cats: ["taxes","employment"],
+    definition: "Your take-home pay — what's left of your gross income after all deductions (federal taxes, state taxes, FICA, health insurance, retirement contributions). This is the amount that actually lands in your bank account and what you should use to budget.",
+    analogy: "If gross income is the whole pizza, net income is your slice after the government, your insurance company, and your 401(k) each take their pieces. Budget from net, not gross.",
+    source: "IRS — Understanding Your Paycheck",
+    url: "https://www.irs.gov/individuals/employees/understanding-your-paycheck"
+  },
+  {
+    term: "Non-Compete Agreement",
+    letter: "N",
+    cats: ["employment"],
+    definition: "A contract clause that restricts you from working for competitors or starting a competing business for a defined period after leaving an employer. Enforceability varies widely by state: California, North Dakota, Minnesota, and Oklahoma largely prohibit them. The FTC voted in 2024 to ban most non-competes nationally (though this is subject to legal challenges).",
+    analogy: "A non-compete is a leash on your career. It says 'when you leave, you can't run to the house next door for [X] months.' How tight the leash depends entirely on your state.",
+    source: "Federal Trade Commission (FTC) — Non-Compete Clauses",
+    url: "https://www.ftc.gov/legal-library/browse/rules/non-compete-clause-rule"
+  },
+  // O
+  {
+    term: "Origination Fee",
+    letter: "O",
+    cats: ["loans"],
+    definition: "A one-time fee charged by a lender for processing a new loan — typically deducted from the loan amount before disbursement. Federal student loan origination fees are set by law (1.057% for Direct subsidized/unsubsidized loans). Mortgage origination fees range from 0.5% to 1% of the loan amount.",
+    analogy: "The origination fee is the cover charge to get into the loan. You borrow $10,000 but only receive $9,893 — yet you still owe the full $10,000.",
+    source: "U.S. Department of Education — Federal Student Aid",
+    url: "https://studentaid.gov/understand-aid/types/loans/interest-rates"
+  },
+  // P
+  {
+    term: "PSLF (Public Service Loan Forgiveness)",
+    letter: "P",
+    cats: ["loans"],
+    definition: "A federal program that forgives remaining federal student loan debt after 120 qualifying monthly payments (10 years) while working full-time for a government agency or eligible nonprofit. Must be on an income-driven repayment plan. The forgiven amount is currently tax-free (through 2025 under the American Rescue Plan).",
+    analogy: "PSLF is a loyalty program for public servants. Serve 10 years, make your payments, and the government tears up the rest of your student loan tab — tax-free.",
+    source: "U.S. Department of Education — Federal Student Aid",
+    url: "https://studentaid.gov/manage-loans/forgiveness-cancellation/public-service"
+  },
+  {
+    term: "Principal",
+    letter: "P",
+    cats: ["loans","credit"],
+    definition: "The original amount borrowed or the remaining balance on a loan, not including interest. When you make loan payments, a portion reduces the principal (how much you owe) and a portion pays interest. Early in a mortgage, most payments go to interest; later, more goes to principal.",
+    analogy: "Principal is the actual loan — the borrowed amount without the extra charge. Interest is the fee for having it. You want to attack the principal as fast as possible to reduce future interest charges.",
+    source: "Consumer Financial Protection Bureau (CFPB)",
+    url: "https://www.consumerfinance.gov/ask-cfpb/what-is-the-difference-between-a-loan-s-principal-and-its-interest-en-1965/"
+  },
+  {
+    term: "Premium (Insurance)",
+    letter: "P",
+    cats: ["insurance"],
+    definition: "The amount you pay — usually monthly — to maintain insurance coverage. Premiums are paid whether or not you file any claims. Higher premiums typically come with lower deductibles, and vice versa. Health insurance premiums paid through your employer are usually taken pre-tax from your paycheck.",
+    analogy: "The premium is your monthly subscription fee for insurance. You pay it to keep the protection available, even if you never use it — like paying for a gym membership whether you go or not.",
+    source: "Healthcare.gov / U.S. Centers for Medicare & Medicaid Services",
+    url: "https://www.healthcare.gov/glossary/premium/"
+  },
+  // R
+  {
+    term: "Roth IRA",
+    letter: "R",
+    cats: ["investing","taxes"],
+    definition: "An individual retirement account funded with after-tax dollars. Contributions (not earnings) can be withdrawn anytime tax- and penalty-free. After age 59½, all withdrawals — including growth — are tax-free. 2024 contribution limit: $7,000 ($8,000 if 50+). Income limits apply: phase-out begins at $146,000 (single) and $230,000 (married).",
+    analogy: "A Roth IRA is paying taxes on seeds instead of the harvest. You pay tax now on what you put in, but decades later, you harvest a fully tax-free crop.",
+    source: "IRS — Roth IRAs",
+    url: "https://www.irs.gov/retirement-plans/roth-iras"
+  },
+  // S
+  {
+    term: "Social Security",
+    letter: "S",
+    cats: ["taxes","employment"],
+    definition: "A federal program that provides retirement, disability, and survivor benefits, funded by FICA payroll taxes (6.2% employee + 6.2% employer on wages up to $168,600 in 2024). Retirement benefits begin as early as age 62 (reduced) or age 70 (maximum). The amount you receive is based on your 35 highest-earning years.",
+    analogy: "Social Security is forced savings into a government-run pension. You and your employer pay in throughout your career, and you draw from it in retirement. The longer you wait to collect, the higher your monthly check.",
+    source: "Social Security Administration (SSA)",
+    url: "https://www.ssa.gov/benefits/retirement/"
+  },
+  {
+    term: "Standard Deduction",
+    letter: "S",
+    cats: ["taxes"],
+    definition: "A fixed dollar amount that reduces your taxable income, available to all filers who don't itemize. 2024 amounts: $14,600 (single), $29,200 (married filing jointly), $21,900 (head of household). About 90% of taxpayers take the standard deduction rather than itemizing individual deductions.",
+    analogy: "The standard deduction is a free discount the IRS gives everyone on their taxable income. If your individual deductions (mortgage interest, charity, etc.) don't add up to more, take the standard — it's free money off your tax bill.",
+    source: "IRS — Standard Deduction",
+    url: "https://www.irs.gov/taxtopics/tc551"
+  },
+  // T
+  {
+    term: "Tax Withholding",
+    letter: "T",
+    cats: ["taxes","employment"],
+    definition: "The amount your employer deducts from each paycheck and sends to the IRS on your behalf. Determined by your W-4 form (allowances/adjustments you specify). If too much is withheld, you get a refund in April. Too little, and you owe. The IRS Withholding Estimator helps you optimize so neither underpayment penalties nor interest-free loans to the government occur.",
+    analogy: "Withholding is like paying for a meal before you know the final bill. If you overpay, you get change back (a refund). If you underpay, you owe the difference — possibly with a penalty.",
+    source: "IRS — Tax Withholding Estimator",
+    url: "https://www.irs.gov/individuals/tax-withholding-estimator"
+  },
+  // U
+  {
+    term: "Unsubsidized Loan",
+    letter: "U",
+    cats: ["loans"],
+    definition: "A federal student loan where interest accrues from the day the loan is disbursed — including while you're in school and during deferment periods. Unlike subsidized loans (where the government pays interest while you're in school), unsubsidized loan interest can capitalize, increasing your principal balance by the time you graduate.",
+    analogy: "An unsubsidized loan is like a hotel that charges you for the room even while you're still checking in. The meter runs from day one, whether you're using the service or not.",
+    source: "U.S. Department of Education — Federal Student Aid",
+    url: "https://studentaid.gov/understand-aid/types/loans/subsidized-unsubsidized"
+  },
+  // V
+  {
+    term: "Vesting Schedule",
+    letter: "V",
+    cats: ["employment","investing"],
+    definition: "The timeline determining when you gain full ownership of employer contributions (401k match or equity/stock grants). Cliff vesting: 100% ownership after a defined period (e.g., 1 year). Graded vesting: ownership accumulates gradually (e.g., 25%/year over 4 years). If you leave before fully vested, you forfeit unvested shares/contributions.",
+    analogy: "Vesting is an employer's way of saying 'we'll give you this bonus, but you have to stick around to actually receive it.' Leave too early, and you leave that money on the table.",
+    source: "U.S. Department of Labor — Employee Benefits Security Administration",
+    url: "https://www.dol.gov/general/topic/retirement/vesting"
+  },
+  // W
+  {
+    term: "W-2 (Wage and Tax Statement)",
+    letter: "W",
+    cats: ["taxes","employment"],
+    definition: "An IRS form your employer sends annually that reports your total wages earned and taxes withheld during the year. You use your W-2 to file your tax return. Employers must send W-2s by January 31. If you worked multiple jobs, you receive a W-2 from each employer.",
+    analogy: "Your W-2 is your annual financial report card from your employer — it tells the IRS (and you) exactly what you earned and what was already collected on your behalf.",
+    source: "IRS — About Form W-2",
+    url: "https://www.irs.gov/forms-pubs/about-form-w-2"
+  },
+  {
+    term: "W-4 (Employee's Withholding Certificate)",
+    letter: "W",
+    cats: ["taxes","employment"],
+    definition: "The IRS form you complete when starting a new job (or whenever your situation changes) that tells your employer how much tax to withhold from your paycheck. Major life changes — marriage, divorce, having a child, getting a second job — affect your optimal withholding. Use the IRS Withholding Estimator annually.",
+    analogy: "Your W-4 is the dial controlling how much tax is pre-paid each paycheck. Turn it wrong and you either overpay (giving the government an interest-free loan) or underpay (getting a surprise bill in April).",
+    source: "IRS — About Form W-4",
+    url: "https://www.irs.gov/forms-pubs/about-form-w-4"
+  },
+  {
+    term: "Wage Garnishment",
+    letter: "W",
+    cats: ["loans","employment"],
+    definition: "A legal process where a creditor or government agency collects a debt by directing your employer to withhold a portion of your wages. For defaulted federal student loans, up to 15% of disposable pay can be garnished without a court order. Child support, back taxes, and court judgments can also trigger garnishment.",
+    analogy: "Wage garnishment is the government or creditor reaching directly into your paycheck before it ever reaches you. You can't opt out — it happens automatically once triggered.",
+    source: "U.S. Department of Labor — Fact Sheet: Wage Garnishment",
+    url: "https://www.dol.gov/agencies/whd/fact-sheets/30-wage-garnishment"
+  },
+  // 4
+  {
+    term: "401(k)",
+    letter: "#",
+    cats: ["investing","taxes","employment"],
+    definition: "An employer-sponsored retirement savings plan that lets you contribute pre-tax dollars (reducing your taxable income now) up to $23,000/year in 2024 ($30,500 if 50+). Investments grow tax-deferred until withdrawal in retirement. Many employers offer matching contributions — contributing enough to capture the full match is considered the highest-priority financial move.",
+    analogy: "A 401(k) is a tax-sheltered box for your retirement savings. Every dollar you put in reduces your tax bill today, grows without taxes slowing it down, and is taxed when you pull it out (hopefully at a lower rate in retirement).",
+    source: "IRS — 401(k) Plans",
+    url: "https://www.irs.gov/retirement-plans/401k-plans"
+  },
+  {
+    term: "403(b)",
+    letter: "#",
+    cats: ["investing","taxes","employment"],
+    definition: "Similar to a 401(k) but for employees of public schools, nonprofits, and certain tax-exempt organizations. Same contribution limits ($23,000/year in 2024). Often offered with lower fees than 401(k)s. Some 403(b) plans allow additional catch-up contributions for employees with 15+ years of service.",
+    analogy: "A 403(b) is the public sector's version of a 401(k) — same core idea (tax-sheltered retirement savings), just available to teachers, hospital workers, and nonprofit employees.",
+    source: "IRS — 403(b) Tax-Sheltered Annuity Plans",
+    url: "https://www.irs.gov/retirement-plans/403b-tax-sheltered-annuity-plans"
+  }
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+let currentCat = 'all';
+let currentSearch = '';
+
+const CAT_COLORS = {
+  credit: 'badge-blue', taxes: 'badge-amber', investing: 'badge-green',
+  loans: 'badge-red', employment: 'badge-blue', insurance: 'badge-blue'
+};
+const CAT_LABELS = {
+  credit:'Credit', taxes:'Taxes', investing:'Investing',
+  loans:'Loans', employment:'Employment', insurance:'Insurance'
+};
+
+function getLetters() {
+  const letters = [...new Set(TERMS.map(t => t.letter))].sort((a,b)=>{
+    if (a==='#') return 1; if (b==='#') return -1; return a.localeCompare(b);
+  });
+  return letters;
+}
+
+function buildAlpha() {
+  const grid = document.getElementById('alphaGrid');
+  const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
+  const hasTerms = new Set(TERMS.map(t => t.letter));
+  grid.innerHTML = allLetters.map(l => `
+    <button class="alpha-btn ${hasTerms.has(l)?'has-terms':''}" onclick="scrollToLetter('${l}')">${l==='#'?'0–9':l}</button>
+  `).join('');
+}
+
+function renderTerms() {
+  const body = document.getElementById('glossaryBody');
+  const search = currentSearch.toLowerCase();
+  const filtered = TERMS.filter(t => {
+    const matchCat = currentCat === 'all' || t.cats.includes(currentCat);
+    const matchSearch = !search || t.term.toLowerCase().includes(search) || t.definition.toLowerCase().includes(search);
+    return matchCat && matchSearch;
+  });
+
+  document.getElementById('termCount').textContent = filtered.length;
+
+  if (filtered.length === 0) {
+    body.innerHTML = `<div class="no-results"><i class="ti ti-search-off"></i><p>No terms found for "${currentSearch}"</p><button class="btn btn-secondary btn-sm" onclick="clearSearch()">Clear search</button></div>`;
+    return;
+  }
+
+  // Group by letter
+  const byLetter = {};
+  for (const t of filtered) {
+    if (!byLetter[t.letter]) byLetter[t.letter] = [];
+    byLetter[t.letter].push(t);
+  }
+  const sortedLetters = Object.keys(byLetter).sort((a,b)=>{
+    if (a==='#') return 1; if (b==='#') return -1; return a.localeCompare(b);
+  });
+
+  body.innerHTML = sortedLetters.map(letter => `
+    <div class="letter-section" id="section-${letter}">
+      <div class="letter-header">${letter === '#' ? '0 – 9' : letter}</div>
+      ${byLetter[letter].map((t,i) => `
+        <div class="term-card">
+          <div class="term-header">
+            <div class="term-name">${t.term}</div>
+            <div class="term-cats">
+              ${t.cats.map(c=>`<span class="badge ${CAT_COLORS[c]||'badge-green'}">${CAT_LABELS[c]||c}</span>`).join('')}
+            </div>
+          </div>
+          <div class="term-definition">${t.definition}</div>
+          ${t.analogy ? `<div class="term-analogy" id="analogy-${letter}-${i}">💡 <strong>Simple analogy:</strong> ${t.analogy}</div>` : ''}
+          <div class="term-footer">
+            <div class="term-source">
+              <i class="ti ti-link"></i>
+              Source: <a href="${t.url}" target="_blank" rel="noopener">${t.source}</a>
+            </div>
+            <div class="term-actions">
+              ${t.analogy ? `<button class="analogy-toggle" onclick="toggleAnalogy('${letter}-${i}', this)"><i class="ti ti-bulb"></i> Show analogy</button>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+window.toggleAnalogy = function(id, btn) {
+  const el = document.getElementById('analogy-' + id);
+  const visible = el.classList.toggle('visible');
+  btn.innerHTML = visible ? '<i class="ti ti-bulb"></i> Hide analogy' : '<i class="ti ti-bulb"></i> Show analogy';
+};
+
+window.filterTerms = function() {
+  currentSearch = document.getElementById('searchInput').value;
+  renderTerms();
+};
+
+window.setCat = function(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTerms();
+};
+
+window.clearSearch = function() {
+  document.getElementById('searchInput').value = '';
+  currentSearch = '';
+  renderTerms();
+};
+
+window.scrollToLetter = function(letter) {
+  const el = document.getElementById('section-' + letter);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+buildAlpha();
+renderTerms();
+</script>
+</body>
+</html>

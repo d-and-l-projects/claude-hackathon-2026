@@ -1,35 +1,29 @@
 // components/sidebar.js
-// Call renderSidebar('pageName') on each page to inject + hydrate the sidebar
-
 export function renderSidebar(activePage) {
   const el = document.getElementById('sidebar');
   if (!el) return;
-
   el.innerHTML = `
-    <div class="sidebar-logo">
+    <div class="sidebar-logo" style="cursor:pointer;" onclick="window.location.href='./dashboard.html'">
       <div class="logo-icon"><i class="ti ti-chart-line"></i></div>
-      <span class="logo-name">FinLens</span>
+      <span class="logo-name">FirstAdvisor</span>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Main</div>
-      <a href="./dashboard.html" class="nav-item ${activePage==='dashboard'?'active':''}" id="nav-dashboard">
+      <a href="./dashboard.html" class="nav-item ${activePage==='dashboard'?'active':''}">
         <i class="ti ti-layout-dashboard"></i> Dashboard
       </a>
-      <a href="./upload.html" class="nav-item ${activePage==='upload'?'active':''}" id="nav-upload">
+      <a href="./upload.html" class="nav-item ${activePage==='upload'?'active':''}">
         <i class="ti ti-upload"></i> Upload document
       </a>
-      <a href="./analysis.html" class="nav-item ${activePage==='analysis'?'active':''}" id="nav-analysis">
+      <a href="./analysis.html" class="nav-item ${activePage==='analysis'?'active':''}">
         <i class="ti ti-file-analytics"></i> Analysis
       </a>
-      <a href="./visualizer.html" class="nav-item ${activePage==='visualizer'?'active':''}" id="nav-visualizer">
+      <a href="./visualizer.html" class="nav-item ${activePage==='visualizer'?'active':''}">
         <i class="ti ti-chart-arrows-vertical"></i> Future impact
       </a>
       <div class="nav-section-label" style="margin-top:8px;">Learn</div>
-      <a href="#" class="nav-item" id="nav-glossary">
+      <a href="./glossary.html" class="nav-item ${activePage==='glossary'?'active':''}">
         <i class="ti ti-book"></i> Glossary
-      </a>
-      <a href="#" class="nav-item" id="nav-history">
-        <i class="ti ti-history"></i> Past documents
       </a>
     </nav>
     <div class="sidebar-user" id="sidebarUser">
@@ -41,7 +35,6 @@ export function renderSidebar(activePage) {
       <i class="ti ti-logout user-logout" onclick="handleLogout()" title="Sign out"></i>
     </div>
   `;
-
   hydrateUser();
 }
 
@@ -49,34 +42,29 @@ async function hydrateUser() {
   try {
     const { onAuth, logOut } = await import('../firebase.js');
     onAuth((user) => {
+      const nameEl = document.getElementById('userNameEl');
+      const emailEl = document.getElementById('userEmailEl');
+      const avatarEl = document.getElementById('userAvatarEl');
       if (user) {
-        const nameEl = document.getElementById('userNameEl');
-        const emailEl = document.getElementById('userEmailEl');
-        const avatarEl = document.getElementById('userAvatarEl');
         if (nameEl) nameEl.textContent = user.displayName || 'User';
         if (emailEl) emailEl.textContent = user.email || '';
         if (avatarEl) {
-          if (user.photoURL) {
-            avatarEl.innerHTML = `<img src="${user.photoURL}" alt="${user.displayName}">`;
-          } else {
-            avatarEl.textContent = (user.displayName || 'U').charAt(0).toUpperCase();
-          }
+          avatarEl.innerHTML = user.photoURL
+            ? `<img src="${user.photoURL}" alt="${user.displayName}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`
+            : (user.displayName||'U').charAt(0).toUpperCase();
         }
       } else {
-        // Demo mode
-        const nameEl = document.getElementById('userNameEl');
-        const emailEl = document.getElementById('userEmailEl');
-        if (nameEl) nameEl.textContent = 'Demo User';
+        if (nameEl) nameEl.textContent = sessionStorage.getItem('demoMode') ? 'Demo User' : 'Guest';
         if (emailEl) emailEl.textContent = 'demo mode';
+        if (avatarEl) avatarEl.textContent = 'D';
       }
     });
     window.handleLogout = logOut;
   } catch {
-    // Firebase not configured — graceful fallback
     const nameEl = document.getElementById('userNameEl');
     const emailEl = document.getElementById('userEmailEl');
     if (nameEl) nameEl.textContent = 'Demo User';
     if (emailEl) emailEl.textContent = 'demo mode';
-    window.handleLogout = () => { window.location.href = './landing.html'; };
+    window.handleLogout = () => { sessionStorage.clear(); window.location.href = './landing.html'; };
   }
 }

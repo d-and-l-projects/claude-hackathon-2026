@@ -1,124 +1,319 @@
-# FirstAdvisor — Setup Guide
+# FirstAdvisor
 
-## Project Structure
+**AI-powered financial document literacy for people who never learned this stuff.**
+
+FirstAdvisor helps you understand financial documents before they become expensive mistakes. Upload a pay stub, credit card agreement, lease, loan offer, or job offer — and get plain-English explanations, personalized risk flags, and actionable steps, all cross-referenced against your actual financial profile.
+
+---
+
+## What it does
+
+Most people sign financial documents they don't fully understand. FirstAdvisor changes that by combining three things:
+
+- **Document analysis** — AI reads your uploaded document and annotates it with risk highlights, plain-English explanations, and clickable glossary terms
+- **Personalized blind spot detection** — cross-references your profile (income, employment type, age, goals, state) with the document to surface risks that apply specifically to *you*, not a generic user
+- **Future impact visualization** — interactive calculators showing how today's financial decisions (APR, minimum payments, 401k contributions, rent burden) compound over time
+
+---
+
+## Pages
+
+| File | Route | Purpose |
+|---|---|---|
+| `landing.html` | `/` | Marketing landing page |
+| `auth.html` | `/auth` | Sign in / create account (Firebase) |
+| `onboarding.html` | `/onboarding` | Profile setup — income, employment, goals, state |
+| `dashboard.html` | `/dashboard` | Overview with charts: flags by doc, goals ring, risk donut, awareness bars |
+| `upload.html` | `/upload` | Upload a document or pick a sample; triggers Gemini vision analysis |
+| `analysis.html` | `/analysis` | Annotated document viewer, red flags sidebar, glossary popups, Blind Spot Scan panel |
+| `visualizer.html` | `/visualizer` | Interactive financial calculators (debt payoff, savings growth, 401k, rent burden) |
+| `glossary.html` | `/glossary` | Searchable financial term dictionary |
+
+---
+
+## Key features
+
+### Document analysis
+- Supports PDF, PNG, JPG, GIF, WEBP
+- Gemini Vision reads uploaded images — no separate OCR needed, handwritten documents supported
+- Document text is annotated with color-coded highlights: red (danger), amber (caution), green (positive)
+- Every highlighted term is clickable — opens a glossary popup with a plain-English explanation and optional simple analogy
+
+### Blind Spot Detector
+The flagship feature. After document analysis, a floating **Blind Spot Scan** button appears. It cross-references your onboarding profile with the document to find risks generic AI wouldn't catch:
+
+- 0% 401(k) contribution when employer offers a match → calculates exact dollars missed per year
+- High APR card when you already have student loans → flags double-debt squeeze risk
+- Rent over 30% of take-home for an hourly worker → flags income variability risk
+- Gig/1099 employment → calculates estimated self-employment tax owed quarterly
+- Non-compete clause → checks your state's enforcement rules
+
+Results include a score (0–100), severity labels, impact amounts, "why this matters" explanations, and specific action steps. A second tab shows example profiles so users can see what blind spots look like before their own data is entered.
+
+### Future impact visualizer
+Four interactive calculators with live sliders:
+- **Credit card payoff** — months to debt freedom and total interest at any payment amount, with minimum payment warning
+- **Savings growth** — compound growth chart splitting contributions vs. interest earned
+- **401(k) retirement** — employer match modeling, salary input, years to retirement
+- **Financial snapshot** — overall score breakdown across debt health, savings rate, and retirement readiness
+
+### Sample documents
+Five built-in annotated documents for users without files ready:
+- Visa Platinum Credit Card Agreement (29.99% APR, foreign transaction fees, penalty APR)
+- Pay Stub / W-2 (0% 401k with available match — the classic missed opportunity)
+- Federal Direct Student Loan (unsubsidized, interest capitalization, IDR options)
+- Job Offer Letter (RSUs, non-compete, 401k match, total comp breakdown)
+- Apartment Lease (rent burden, late fees, early termination penalty, rent control exemption)
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Vanilla HTML, CSS, JavaScript (ES modules) |
+| AI document reading | Google Gemini 2.0 Flash (vision — reads uploaded images) |
+| Authentication | Firebase Auth (Google OAuth + email/password) |
+| Database | Firestore (document history, user profiles) |
+| Fonts | DM Sans + DM Mono (Google Fonts) |
+| Icons | Tabler Icons |
+| Hosting | Firebase Hosting (or Vercel/Netlify) |
+
+No framework. No build step. No bundler. Drop the files on any static host and it works.
+
+---
+
+## Project structure
+
 ```
 firstadvisor/
 ├── pages/
-│   ├── landing.html      ← Landing / Google sign-in
-│   ├── onboarding.html   ← User profile (income, state, goals)
-│   ├── dashboard.html    ← Home dashboard
-│   ├── upload.html       ← Upload document (with privacy warning)
-│   ├── analysis.html     ← AI analysis — clickable highlights + glossary popup
-│   ├── visualizer.html   ← Future impact charts
-│   └── glossary.html     ← Financial terms with official sources
+│   ├── dashboard.html
+│   ├── upload.html
+│   ├── analysis.html
+│   ├── visualizer.html
+│   ├── onboarding.html
+│   ├── auth.html
+│   └── glossary.html
 ├── components/
-│   └── sidebar.js        ← Shared sidebar (logo links to dashboard)
+│   └── sidebar.js          # Shared sidebar rendered on every page
 ├── data/
-│   └── sample-documents.js  ← 5 sample docs with highlights + analogies
+│   └── sample-documents.js # 5 annotated sample docs with highlights + actions
 ├── styles/
-│   └── global.css        ← Design system
-├── firebase.js           ← Firebase Auth + Firestore
+│   └── global.css          # Design system: tokens, layout, components
+├── images/
+│   └── bear.png            # Logo / favicon
+├── firebase.js             # Auth, Firestore read/write, requireAuth guard
+├── env/
+│   ├── .env.local          # ← your secrets (never commit)
+│   └── .env.example        # ← safe to commit, no real values
 └── README.md
 ```
 
 ---
 
-## Step 1 — Firebase Setup
+## Local setup
 
-### A) Create project
-1. Go to https://console.firebase.google.com
-2. Click "Add project" → name it `firstadvisor` → Create
+**1. Clone the repo**
+```bash
+git clone https://github.com/your-username/firstadvisor.git
+cd firstadvisor
+```
 
-### B) Enable Google Sign-In
-1. Left sidebar → Authentication → Get started
-2. Sign-in method → Google → Enable → Save
+**2. Create your env file**
+```bash
+cp env/.env.example env/.env.local
+```
+Fill in `env/.env.local` with your actual keys (see below).
 
-### C) Enable Firestore
-1. Left sidebar → Firestore Database → Create database
-2. Choose "Start in test mode" → Next → Done
+**3. Serve locally**
 
-### D) Get your config
-1. Project Settings (gear icon) → General → scroll to "Your apps"
-2. Click </> (Web) → name it "firstadvisor-web" → Register app
-3. Copy the firebaseConfig object
+Any static file server works. Simplest options:
+```bash
+# Python
+python3 -m http.server 3000
 
-### E) Paste config into firebase.js
-```js
+# Node
+npx serve .
+
+# VS Code
+# Install "Live Server" extension → right-click index.html → Open with Live Server
+```
+
+Open `http://localhost:3000/pages/auth.html` to start.
+
+---
+
+## Firebase setup
+
+### 1. Create a project
+Go to [console.firebase.google.com](https://console.firebase.google.com) → Add project → name it `firstadvisor`.
+
+### 2. Enable Authentication
+Build → Authentication → Get started → Sign-in method → enable **Google** and **Email/Password**.
+
+### 3. Enable Firestore
+Build → Firestore Database → Create database → Start in test mode (lock down rules before going to production).
+
+### 4. Get your config
+Project Settings → Your apps → Add app → Web → Register → copy the `firebaseConfig` object.
+
+### 5. Paste config into firebase.js
+Find this block in `firebase.js` and replace the placeholder values:
+```javascript
 const firebaseConfig = {
-  apiKey: "AIza...",           // ← your actual values
-  authDomain: "firstadvisor-xxxxx.firebaseapp.com",
-  projectId: "firstadvisor-xxxxx",
-  storageBucket: "firstadvisor-xxxxx.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 ```
 
-### F) ⚠️ CRITICAL — Add authorized domains (fixes "nothing happens on sign-in")
-1. Firebase Console → Authentication → Settings → Authorized domains
-2. Click "Add domain" → add: `localhost`
-3. Click "Add domain" again → add: `127.0.0.1`
-4. If using a different port (like 5500), still just add the hostname above — port isn't needed
+### 6. Add your domain to authorized domains
+Authentication → Settings → Authorized domains → Add domain → add `localhost` for local dev and your production URL when deployed.
 
 ---
 
-## Step 2 — Serve files locally
+## Gemini API setup
 
-### Option A — VS Code Live Server (recommended)
-1. Install "Live Server" extension
-2. Right-click `pages/landing.html` → "Open with Live Server"
-3. It opens at http://127.0.0.1:5500/pages/landing.html
+FirstAdvisor uses **Gemini 2.0 Flash** to read uploaded document images.
 
-### Option B — Python
-```bash
-cd firstadvisor
-python3 -m http.server 8080
-# Open: http://localhost:8080/pages/landing.html
+**1. Get a key**
+Go to [aistudio.google.com](https://aistudio.google.com) → Get API key → Create API key.
+
+**2. Add it to upload.html**
+Find this line near the top of the `<script>` block in `upload.html`:
+```javascript
+const GEMINI_API_KEY = 'YOUR_KEY_HERE';
+const GEMINI_MODEL   = 'gemini-2.0-flash';
 ```
 
-### Option C — Node
-```bash
-npx serve .
+⚠️ **For production**: move the Gemini call to a server-side function (Firebase Functions, Vercel Edge, Cloudflare Worker) so your key is never exposed in client-side code. For a hackathon or demo, the client-side key is fine.
+
+---
+
+## Environment variables
+
+```
+# env/.env.local — never commit this file
+
+GEMINI_API_KEY=AIzaSy...
+FIREBASE_API_KEY=AIzaSy...
+FIREBASE_AUTH_DOMAIN=firstadvisor-xxx.firebaseapp.com
+FIREBASE_PROJECT_ID=firstadvisor-xxx
+FIREBASE_STORAGE_BUCKET=firstadvisor-xxx.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=123456789
+FIREBASE_APP_ID=1:123456789:web:abc123
+```
+
+Add to `.gitignore`:
+```
+env/.env.local
+env/.env.*
+!env/.env.example
 ```
 
 ---
 
-## Step 3 — Testing the upload flow (minimal API usage)
+## Data flow
 
-The app currently uses static sample documents — **no API calls are made** during upload/analysis. This lets you test the full flow for free:
+```
+User uploads document
+        ↓
+Gemini Vision API reads image
+        ↓
+Returns JSON: { name, type, rawText, highlights, actions, meaning }
+        ↓
+Saved to Firestore (per user) + localStorage cache
+        ↓
+analysis.html reads doc + user profile from localStorage
+        ↓
+Blind Spot Detector cross-references both
+        ↓
+Personalised risk insights rendered
+```
 
-1. Go to Upload page
-2. Select any sample document (credit card, pay stub, etc.)
-3. Click "Analyze document" → watch progress bar
-4. App routes to Analysis page with pre-loaded highlights, glossary, and sidebar
-5. Click any highlighted term → glossary popup opens
-6. Click "Show me a simple analogy" → analogy reveals (no API call)
+User profile (from onboarding) is saved to:
+- Firestore: `users/{uid}/profile`
+- localStorage: `firstAdvisor:{uid}:userProfile`
+- sessionStorage: `userProfile` (for same-tab access)
 
-When you're ready to add real AI analysis:
-- Get an Anthropic API key at https://console.anthropic.com
-- Add it to `analysis.html` in the `runAnalysis()` function (see comments there)
-- For production: route through a backend (never expose API keys in frontend)
+Document history is saved to:
+- Firestore: `users/{uid}/documents`
+- localStorage: `firstAdvisor:{uid}:docHistory`
 
 ---
 
-## Firebase Auth Troubleshooting
+## Deploying
 
-| Symptom | Fix |
-|---|---|
-| Clicking "Continue with Google" does nothing | Add `localhost` and `127.0.0.1` to Firebase authorized domains |
-| Popup appears then immediately closes | Same as above — unauthorized domain |
-| "auth/unauthorized-domain" error | Same fix |
-| Error message shown in modal | Check the exact error text — it will tell you what's wrong |
-| Works locally but not deployed | Add your deployed domain to authorized domains |
+**Firebase Hosting**
+```bash
+npm install -g firebase-tools
+firebase login
+firebase init hosting
+# Public directory: . (project root)
+# Single-page app: No
+# GitHub deploys: optional
+firebase deploy
+```
+
+**Vercel**
+```bash
+npx vercel --prod
+```
+Or drag the project folder to [vercel.com/new](https://vercel.com/new).
+
+**Netlify**
+Drag the project folder to [app.netlify.com/drop](https://app.netlify.com/drop).
 
 ---
 
-## Sample Documents Included
+## Firestore security rules (production)
 
-| Document | Key flags |
-|---|---|
-| Visa Platinum Credit Card | 29.99% APR, 3% foreign fee, arbitration clause, $95 annual fee |
-| Pay Stub Q4 2024 | 0% 401k contribution with 5% employer match available |
-| Federal Student Loan | Interest capitalization, PSLF eligibility, income-driven repayment |
-| TechCo Offer Letter | Sign-on clawback, 4-year equity cliff, non-compete, total comp breakdown |
-| Apartment Lease | AB 1482 exemption, $150+$15/day late fees, $4,200 lease-break penalty |
+Replace the default test mode rules before going live:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+---
+
+## Privacy
+
+FirstAdvisor is designed with privacy in mind:
+
+- Documents are processed by Gemini and the extracted text is stored in Firestore — the original image file is **never stored**
+- Users are warned before upload to redact SSNs, bank account numbers, routing numbers, and credit card numbers
+- All data is scoped to the authenticated user — no cross-user data access
+- Firebase Auth handles all credential management — no passwords are stored by FirstAdvisor
+
+---
+
+## Roadmap
+
+- [ ] PDF text extraction (skip vision for text-based PDFs)
+- [ ] Push notifications for document expiry reminders (lease end dates, card fee dates)
+- [ ] Side-by-side document comparison (compare two job offers, two credit cards)
+- [ ] Export analysis as PDF report
+- [ ] Mobile app (React Native or PWA)
+- [ ] Salary benchmarking — compare your pay stub against BLS data for your role and state
+- [ ] Multi-document blind spot scan (analyze all your docs together)
+
+---
+
+## License
+
+MIT — do whatever you want with it, just don't use it to give people bad financial advice.
+
+---
+
+Built for people who were never taught how money works.

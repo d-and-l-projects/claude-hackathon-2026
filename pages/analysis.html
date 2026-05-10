@@ -9,9 +9,7 @@
   <link rel="stylesheet" href="../styles/global.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <style>
-    .analysis-layout { display: grid; grid-template-columns: 1fr 320px; gap: 18px; height: calc(100vh - 60px); overflow: hidden; }
-
-    /* Left panel */
+    .analysis-layout { display: grid; grid-template-columns: 1fr 320px; gap: 18px; height: calc(100vh - var(--topbar-height)); overflow: hidden; }
     .doc-panel { display: flex; flex-direction: column; overflow: hidden; }
     .doc-panel-header { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .doc-panel-meta { display: flex; align-items: center; gap: 10px; }
@@ -19,90 +17,113 @@
     .doc-panel-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
     .doc-panel-type { font-size: 11px; color: var(--text-tertiary); }
     .doc-tabs { display: flex; gap: 2px; background: var(--bg-muted); border-radius: var(--radius-md); padding: 3px; }
-    .doc-tab { padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; border: none; background: none; }
+    .doc-tab { padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; border: none; background: none; font-family: var(--font-sans); }
     .doc-tab.active { background: var(--bg-surface); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-
     .doc-body { background: var(--bg-surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius-lg) var(--radius-lg); flex: 1; overflow-y: auto; padding: 24px; }
-
-    /* Document text rendering */
-    .doc-text { font-size: 13px; color: var(--text-secondary); line-height: 2; font-family: var(--font-sans); }
+    .doc-text { font-size: 13px; color: var(--text-secondary); line-height: 2; }
     .doc-text strong { color: var(--text-primary); }
     .raw-text { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); line-height: 1.8; white-space: pre-wrap; background: var(--bg-muted); padding: 20px; border-radius: var(--radius-md); }
-
-    /* Highlights */
-    .hl {
-      display: inline; border-radius: 3px; padding: 1px 3px;
-      cursor: pointer; position: relative; transition: all 0.15s;
-      border-bottom: 2px solid transparent;
-    }
+    .hl { display: inline; border-radius: 3px; padding: 1px 3px; cursor: pointer; border-bottom: 2px solid transparent; transition: opacity 0.15s; }
     .hl:hover { opacity: 0.85; }
     .hl.danger { background: #FCEBEB; border-bottom-color: #E24B4A; }
-    .hl.warn { background: #FAEEDA; border-bottom-color: #EF9F27; }
-    .hl.good { background: var(--green-50); border-bottom-color: var(--green-200); }
-
-    .hl-badge {
-      display: inline-flex; align-items: center; gap: 2px;
-      font-size: 9px; font-weight: 600; padding: 1px 5px;
-      border-radius: 10px; margin-left: 3px; vertical-align: middle;
-      cursor: pointer;
-    }
+    .hl.warn   { background: #FAEEDA; border-bottom-color: #EF9F27; }
+    .hl.good   { background: var(--green-50); border-bottom-color: var(--green-200); }
+    .hl-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 10px; margin-left: 3px; vertical-align: middle; cursor: pointer; }
     .hl-badge.danger { background: #E24B4A; color: #fff; }
-    .hl-badge.warn { background: #EF9F27; color: #fff; }
-    .hl-badge.good { background: var(--green-600); color: #fff; }
-
-    /* Sidebar */
-    .sidebar-analysis { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; height: calc(100vh - 60px); padding-bottom: 20px; }
-
+    .hl-badge.warn   { background: #EF9F27; color: #fff; }
+    .hl-badge.good   { background: var(--green-600); color: #fff; }
+    .sidebar-analysis { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; height: calc(100vh - var(--topbar-height)); padding-bottom: 80px; }
     .analysis-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; flex-shrink: 0; }
     .ac-header { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
     .ac-header i { font-size: 14px; color: var(--green-600); }
-    .ac-header i.warn { color: var(--amber-600); }
+    .ac-header i.warn   { color: var(--amber-600); }
     .ac-header i.danger { color: var(--red-600); }
     .ac-body { padding: 14px; }
-
     .loading-row { display: flex; align-items: center; gap: 8px; color: var(--text-tertiary); font-size: 12px; padding: 8px 0; }
-
-    .risk-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .risk-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
     .risk-item:last-child { border-bottom: none; }
     .risk-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
     .risk-dot.danger { background: var(--red-400); }
-    .risk-dot.warn { background: var(--amber-400); }
-    .risk-dot.good { background: var(--green-200); }
+    .risk-dot.warn   { background: var(--amber-400); }
+    .risk-dot.good   { background: var(--green-200); }
     .risk-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
     .risk-term { font-weight: 600; color: var(--text-primary); }
-
     .action-item { display: flex; gap: 10px; padding: 8px 0; }
     .action-num { width: 20px; height: 20px; border-radius: 50%; background: var(--green-50); color: var(--green-600); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
     .action-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
-
-    /* Glossary popup */
-    .glossary-overlay {
-      display: none; position: fixed; inset: 0; z-index: 500;
-      background: rgba(0,0,0,0.35);
-      align-items: flex-end; justify-content: center;
-    }
-    .glossary-overlay.open { display: flex; }
-    .glossary-popup {
-      background: var(--bg-surface); border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-      width: 100%; max-width: 680px; padding: 28px 32px 36px;
-      box-shadow: 0 -8px 40px rgba(0,0,0,0.12);
-      animation: slideUp 0.25s ease;
-    }
-    @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .gp-close { float: right; background: none; border: none; font-size: 22px; color: var(--text-tertiary); cursor: pointer; margin-top: -4px; }
-    .gp-level { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; margin-bottom: 10px; }
-    .gp-term { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 14px; }
-    .gp-section-label { font-size: 10px; font-weight: 700; color: var(--text-tertiary); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
-    .gp-explanation { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 18px; padding: 14px 16px; background: var(--bg-muted); border-radius: var(--radius-md); }
-    .gp-analogy-box { display: none; font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 18px; padding: 14px 16px; background: var(--amber-50); border: 1px solid #EF9F2733; border-radius: var(--radius-md); border-left: 3px solid var(--amber-400); }
-    .gp-analogy-box.visible { display: block; }
-    .gp-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .gp-actions button { font-size: 13px; }
-
-    /* Proceed to viz button */
-    .viz-cta { background: var(--green-600); color: #fff; border: none; border-radius: var(--radius-lg); padding: 12px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; transition: background 0.15s; margin-top: 4px; }
+    .viz-cta { background: var(--green-600); color: #fff; border: none; border-radius: var(--radius-lg); padding: 12px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; transition: background 0.15s; font-family: var(--font-sans); }
     .viz-cta:hover { background: var(--green-800); }
-    .viz-cta i { font-size: 16px; }
+
+    /* Glossary */
+    .glossary-overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.35); align-items: flex-end; justify-content: center; }
+    .glossary-overlay.open { display: flex; }
+    .glossary-popup { background: var(--bg-surface); border-radius: var(--radius-xl) var(--radius-xl) 0 0; width: 100%; max-width: 680px; padding: 28px 32px 36px; box-shadow: 0 -8px 40px rgba(0,0,0,0.12); animation: slideUp 0.25s ease; }
+    @keyframes slideUp { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .gp-close { float:right; background:none; border:none; font-size:22px; color:var(--text-tertiary); cursor:pointer; margin-top:-4px; }
+    .gp-level { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; margin-bottom:10px; }
+    .gp-term { font-size:20px; font-weight:700; color:var(--text-primary); margin-bottom:14px; }
+    .gp-section-label { font-size:10px; font-weight:700; color:var(--text-tertiary); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+    .gp-explanation { font-size:14px; color:var(--text-secondary); line-height:1.7; margin-bottom:18px; padding:14px 16px; background:var(--bg-muted); border-radius:var(--radius-md); }
+    .gp-analogy-box { display:none; font-size:14px; color:var(--text-secondary); line-height:1.7; margin-bottom:18px; padding:14px 16px; background:var(--amber-50); border:1px solid #EF9F2733; border-radius:var(--radius-md); border-left:3px solid var(--amber-400); }
+    .gp-analogy-box.visible { display:block; }
+    .gp-actions { display:flex; gap:10px; flex-wrap:wrap; }
+
+    /* BSD FAB */
+    .bsd-fab { position:fixed; bottom:24px; right:24px; z-index:400; display:flex; align-items:center; gap:9px; background:var(--green-600); color:#fff; border:none; border-radius:var(--radius-md); padding:14px 22px; font-size:14px; font-weight:700; cursor:pointer; font-family:var(--font-sans); box-shadow:var(--shadow-md); animation:fabPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; transition:background 0.15s; }
+    .bsd-fab:hover { background:var(--green-800); }
+    .bsd-fab i { font-size:18px; }
+    .fab-badge { background:var(--red-400); color:#fff; font-size:10px; font-weight:800; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    @keyframes fabPop { from{opacity:0;transform:scale(0.7) translateY(16px)} to{opacity:1;transform:scale(1) translateY(0)} }
+
+    /* BSD panel */
+    .bsd-overlay { display:none; position:fixed; inset:0; z-index:490; background:rgba(0,0,0,0.4); }
+    .bsd-overlay.open { display:block; }
+    .bsd-panel { position:fixed; bottom:0; left:0; right:0; z-index:491; background:var(--bg-surface); border-radius:20px 20px 0 0; box-shadow:0 -8px 48px rgba(0,0,0,0.15); max-height:82vh; overflow-y:auto; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.32,0.72,0,1); }
+    .bsd-panel.open { transform:translateY(0); }
+    .bsd-panel-handle { width:40px; height:4px; background:var(--border-strong); border-radius:2px; margin:12px auto 0; }
+    .bsd-panel-header { padding:16px 24px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .bsd-panel-header h2 { font-size:17px; font-weight:700; color:var(--text-primary); }
+    .bsd-panel-header p { font-size:12px; color:var(--text-secondary); margin-top:2px; }
+    .bsd-panel-close { width:32px; height:32px; border-radius:50%; background:var(--bg-muted); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); font-size:16px; flex-shrink:0; }
+    .bsd-panel-body { padding:20px 24px 32px; }
+    .bsd-mode-toggle { display:flex; gap:0; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; margin-bottom:20px; }
+    .bsd-mode-btn { flex:1; padding:9px 12px; border:none; background:transparent; font-family:var(--font-sans); font-size:13px; font-weight:500; color:var(--text-secondary); cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .bsd-mode-btn.active { background:var(--green-600); color:#fff; }
+    .bsd-mode-btn i { font-size:15px; }
+    .bsd-score-bar { background:var(--bg-muted); border-radius:var(--radius-lg); padding:14px 16px; margin-bottom:16px; display:flex; align-items:center; gap:14px; }
+    .bsd-score-num { font-size:32px; font-weight:800; line-height:1; }
+    .bsd-score-num.high { color:var(--red-600); }
+    .bsd-score-num.mid  { color:var(--amber-800); }
+    .bsd-score-num.low  { color:var(--green-600); }
+    .bsd-score-track { flex:1; height:8px; background:var(--border-strong); border-radius:4px; overflow:hidden; }
+    .bsd-score-fill { height:100%; border-radius:4px; transition:width 0.8s ease; }
+    .bsp-card { border-radius:var(--radius-lg); overflow:hidden; margin-bottom:12px; border:1px solid var(--border); cursor:pointer; }
+    .bsp-card.critical { border-left:4px solid var(--red-400); }
+    .bsp-card.warning  { border-left:4px solid var(--amber-400); }
+    .bsp-card.good     { border-left:4px solid var(--green-200); }
+    .bsp-header { padding:14px 16px; display:flex; align-items:flex-start; gap:12px; background:var(--bg-surface); }
+    .bsp-icon { width:38px; height:38px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .bsp-icon.critical { background:#FCEBEB; color:var(--red-600); }
+    .bsp-icon.warning  { background:var(--amber-50); color:var(--amber-800); }
+    .bsp-icon.good     { background:var(--green-50); color:var(--green-600); }
+    .bsp-title   { font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:3px; }
+    .bsp-summary { font-size:12px; color:var(--text-secondary); line-height:1.55; }
+    .bsp-amount  { font-size:16px; font-weight:800; margin-top:6px; }
+    .bsp-amount.loss    { color:var(--red-600); }
+    .bsp-amount.gain    { color:var(--green-600); }
+    .bsp-amount.neutral { color:var(--amber-800); }
+    .bsp-detail { display:none; padding:0 16px 14px; background:var(--bg-muted); border-top:1px solid var(--border); }
+    .bsp-card.open .bsp-detail { display:block; }
+    .bsp-detail-text { font-size:12.5px; color:var(--text-secondary); line-height:1.65; padding-top:12px; }
+    .bsp-action-list { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+    .bsp-action { font-size:12px; color:var(--text-secondary); padding:8px 10px; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); display:flex; align-items:flex-start; gap:8px; line-height:1.5; }
+    .bsp-action i { color:var(--green-600); font-size:13px; flex-shrink:0; margin-top:1px; }
+    .bsd-scanning { text-align:center; padding:32px 20px; }
+    .mini-radar { width:56px; height:56px; border-radius:50%; border:2px solid rgba(29,158,117,0.25); margin:0 auto 16px; position:relative; animation:radarP 1.8s ease-in-out infinite; }
+    .mini-radar::after { content:''; position:absolute; inset:10px; border-radius:50%; background:rgba(29,158,117,0.15); animation:radarP 1.8s ease-in-out infinite 0.4s; }
+    @keyframes radarP { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.06)} }
+    .bsd-scanning h4 { font-size:14px; font-weight:600; color:var(--text-primary); margin-bottom:6px; }
+    .bsd-scanning p  { font-size:12px; color:var(--text-secondary); }
   </style>
 </head>
 <body>
@@ -117,16 +138,13 @@
       </div>
       <div class="topbar-right">
         <a href="./upload.html" class="btn btn-secondary btn-sm"><i class="ti ti-arrow-left"></i> Upload different doc</a>
-        <button class="btn btn-primary btn-sm" onclick="document.getElementById('vizCta').scrollIntoView({behavior:'smooth'})">
-          <i class="ti ti-chart-arrows-vertical"></i> Future impact
-        </button>
+        <a href="./visualizer.html" class="btn btn-primary btn-sm"><i class="ti ti-chart-arrows-vertical"></i> Future impact</a>
       </div>
     </div>
 
-    <div class="page-body" style="overflow:hidden; padding-bottom:0;">
+    <div class="page-body" style="overflow:hidden;padding-bottom:0;">
       <div class="analysis-layout">
 
-        <!-- Document panel -->
         <div class="doc-panel">
           <div class="doc-panel-header">
             <div class="doc-panel-meta">
@@ -147,44 +165,36 @@
           </div>
         </div>
 
-        <!-- Sidebar -->
         <div class="sidebar-analysis">
-
           <div class="analysis-card">
             <div class="ac-header"><i class="ti ti-bulb"></i> What this means</div>
             <div class="ac-body" id="meaningBody">
               <div class="loading-row"><div class="dot-pulse"><span></span><span></span><span></span></div> Analyzing...</div>
             </div>
           </div>
-
           <div class="analysis-card">
             <div class="ac-header"><i class="ti ti-alert-triangle warn"></i> Red flags</div>
             <div class="ac-body" id="risksBody">
               <div class="loading-row"><div class="dot-pulse"><span></span><span></span><span></span></div> Scanning...</div>
             </div>
           </div>
-
           <div class="analysis-card">
             <div class="ac-header"><i class="ti ti-list-check"></i> Recommended actions</div>
             <div class="ac-body" id="actionsBody">
               <div class="loading-row"><div class="dot-pulse"><span></span><span></span><span></span></div> Generating...</div>
             </div>
           </div>
-
-          <!-- CTA to Future Impact -->
-          <div class="analysis-card" style="background: var(--green-50); border-color: var(--green-200);">
+          <div class="analysis-card" style="background:var(--green-50);border-color:var(--green-200);">
             <div class="ac-header" style="border-color:var(--green-200);"><i class="ti ti-chart-arrows-vertical"></i> See the future cost</div>
             <div class="ac-body">
-              <p style="font-size:12px; color:var(--green-600); line-height:1.6; margin-bottom:12px;">
-                See how these terms compound over time — interest accumulation, debt timelines, and retirement impact.
-              </p>
+              <p style="font-size:12px;color:var(--green-600);line-height:1.6;margin-bottom:12px;">See how these terms compound over time — interest accumulation, debt timelines, and retirement impact.</p>
               <a href="./visualizer.html" id="vizCta">
                 <button class="viz-cta"><i class="ti ti-trending-up"></i> Open future impact visualizer</button>
               </a>
             </div>
           </div>
-
         </div>
+
       </div>
     </div>
   </div>
@@ -196,19 +206,46 @@
     <button class="gp-close" onclick="closeGlossaryBtn()">&times;</button>
     <div class="gp-level badge" id="gpLevel"></div>
     <div class="gp-term" id="gpTerm"></div>
-
     <div class="gp-section-label">What this means</div>
     <div class="gp-explanation" id="gpExplanation"></div>
-
     <div class="gp-section-label" id="analogyLabel" style="display:none;">Simple analogy</div>
     <div class="gp-analogy-box" id="gpAnalogy"></div>
-
     <div class="gp-actions">
-      <button class="btn btn-secondary btn-sm" id="analogyBtn" onclick="showAnalogy()">
-        <i class="ti ti-bulb"></i> Show me a simple analogy
-      </button>
+      <button class="btn btn-secondary btn-sm" id="analogyBtn" onclick="showAnalogy()"><i class="ti ti-bulb"></i> Show me a simple analogy</button>
       <button class="btn btn-ghost btn-sm" onclick="closeGlossaryBtn()">Got it</button>
     </div>
+  </div>
+</div>
+
+<!-- BSD FAB — inside body, after app-wrapper -->
+<button class="bsd-fab" id="bsdFab" onclick="window.openBSD()">
+  <i class="ti ti-radar"></i> Blind Spot Scan
+  <span class="fab-badge" id="bsdBadge">?</span>
+</button>
+
+<div class="bsd-overlay" id="bsdOverlay" onclick="window.closeBSD()"></div>
+
+<div class="bsd-panel" id="bsdPanel">
+  <div class="bsd-panel-handle"></div>
+  <div class="bsd-panel-header">
+    <div>
+      <h2>Your Blind Spot Scan</h2>
+      <p>Personalized to your profile + this document</p>
+    </div>
+    <button class="bsd-panel-close" onclick="window.closeBSD()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="bsd-panel-body">
+    <div class="bsd-mode-toggle">
+      <button class="bsd-mode-btn active" id="modeReal" onclick="window.setBSDMode('real')"><i class="ti ti-user-check"></i> Your results</button>
+      <button class="bsd-mode-btn" id="modeSample" onclick="window.setBSDMode('sample')"><i class="ti ti-eye"></i> See an example</button>
+    </div>
+    <div class="bsd-scanning" id="bsdScanning">
+      <div class="mini-radar"></div>
+      <h4>Scanning your document...</h4>
+      <p>Cross-referencing with your profile</p>
+    </div>
+    <div id="bsdRealResults" style="display:none;"></div>
+    <div id="bsdSampleResults" style="display:none;"></div>
   </div>
 </div>
 
@@ -219,194 +256,264 @@
 
   renderSidebar('analysis');
 
-  const currentUser = await requireAuth();
-  const profileCacheKey = uid => `firstAdvisor:${uid || 'demo'}:userProfile`;
-  const docsCacheKey = uid => `firstAdvisor:${uid || 'demo'}:docHistory`;
+  const profileCacheKey = uid => `firstAdvisor:${uid||'demo'}:userProfile`;
+  const docsCacheKey    = uid => `firstAdvisor:${uid||'demo'}:docHistory`;
   function readLocal(key, fallback) {
-    try { return JSON.parse(localStorage.getItem(key) || fallback); }
-    catch { return JSON.parse(fallback); }
+    try { return JSON.parse(localStorage.getItem(key)||fallback); } catch { return JSON.parse(fallback); }
   }
 
-  let docId = sessionStorage.getItem('activeDoc') || 'credit_card';
-  let docKey = sessionStorage.getItem('activeDocKey') || docId;
-  let aiDoc = JSON.parse(sessionStorage.getItem('aiAnalysis') || 'null');
-  let savedDocs = readLocal(docsCacheKey(currentUser?.uid), '[]');
+  const currentUser = await requireAuth();
 
+  let docId  = sessionStorage.getItem('activeDoc')    || 'credit_card';
+  let docKey = sessionStorage.getItem('activeDocKey') || docId;
+  let aiDoc  = JSON.parse(sessionStorage.getItem('aiAnalysis') || 'null');
+
+  let savedDocs = readLocal(docsCacheKey(currentUser?.uid), '[]');
   if (currentUser) {
     savedDocs = await getUserDocuments(currentUser.uid);
     localStorage.setItem(docsCacheKey(currentUser.uid), JSON.stringify(savedDocs));
     sessionStorage.setItem('docHistory', JSON.stringify(savedDocs));
   }
 
-  const savedDoc = savedDocs.find(d => d.firestoreId === docId || d.docKey === docId || d.docKey === docKey || d.id === docId);
-  if (!aiDoc && savedDoc?.analysis) {
-    aiDoc = savedDoc.analysis;
-    sessionStorage.setItem('aiAnalysis', JSON.stringify(aiDoc));
-  }
+  const savedDoc = savedDocs.find(d => d.firestoreId===docId || d.docKey===docId || d.docKey===docKey || d.id===docId);
+  if (!aiDoc && savedDoc?.analysis) { aiDoc = savedDoc.analysis; sessionStorage.setItem('aiAnalysis', JSON.stringify(aiDoc)); }
   if (savedDoc?.docKey) docKey = savedDoc.docKey;
 
   const doc = aiDoc || SAMPLE_DOCUMENTS[docKey] || SAMPLE_DOCUMENTS[docId] || SAMPLE_DOCUMENTS['credit_card'];
 
-  // Set header
-  document.getElementById('docName').textContent = sessionStorage.getItem('uploadedFileName') || savedDoc?.filename || doc.filename;
+  document.getElementById('docName').textContent = sessionStorage.getItem('uploadedFileName') || savedDoc?.filename || doc.filename || doc.name;
   document.getElementById('docType').textContent = doc.type;
   document.getElementById('topTitle').textContent = doc.name;
-  document.getElementById('topSub').textContent = `${doc.highlights.filter(h=>h.level==='danger').length} red flags · ${doc.highlights.filter(h=>h.level==='warn').length} warnings · ${doc.highlights.filter(h=>h.level==='good').length} positive terms`;
+  document.getElementById('topSub').textContent =
+    `${doc.highlights.filter(h=>h.level==='danger').length} red flags · ${doc.highlights.filter(h=>h.level==='warn').length} warnings · ${doc.highlights.filter(h=>h.level==='good').length} positive terms`;
 
-  // Build annotated document text
   let annotated = doc.rawText;
-  // Replace each highlight term with a clickable span
-  const sorted = [...doc.highlights].sort((a,b) => b.term.length - a.term.length);
+  const sorted = [...doc.highlights].sort((a,b)=>b.term.length-a.term.length);
   for (const h of sorted) {
-    const escaped = h.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = new RegExp('(' + escaped + ')', 'i');
-    const badge = h.level === 'good' ? '✓ Good' : h.level === 'danger' ? '⚠ Risk' : '⚠ Note';
-    annotated = annotated.replace(re, (m) =>
-      `<span class="hl ${h.level}" onclick="openGlossary('${encodeURIComponent(h.term)}')" title="Click to learn more">${m}</span><span class="hl-badge ${h.level}" onclick="openGlossary('${encodeURIComponent(h.term)}')">${badge}</span>`
+    const esc = h.term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const badge = h.level==='good'?'✓ Good':h.level==='danger'?'⚠ Risk':'⚠ Note';
+    annotated = annotated.replace(new RegExp('('+esc+')','i'), m =>
+      `<span class="hl ${h.level}" onclick="openGlossary('${encodeURIComponent(h.term)}')">${m}</span><span class="hl-badge ${h.level}" onclick="openGlossary('${encodeURIComponent(h.term)}')">${badge}</span>`
     );
   }
-
-  // Convert line breaks and bold
-  const formatted = annotated
-    .split('\n').map(line => {
-      if (line.trim() === '') return '<br>';
-      if (line.match(/^[A-Z][A-Z\s—\-]+$/) || line.match(/^Section \d/)) {
-        return `<strong style="color:var(--text-primary);display:block;margin-top:14px;">${line}</strong>`;
-      }
-      return line;
-    }).join('\n');
-
-  document.getElementById('docView').innerHTML = formatted;
+  document.getElementById('docView').innerHTML = annotated.split('\n').map(line => {
+    if (!line.trim()) return '<br>';
+    if (line.match(/^[A-Z][A-Z\s—\-]+$/) || line.match(/^Section \d/))
+      return `<strong style="color:var(--text-primary);display:block;margin-top:14px;">${line}</strong>`;
+    return line;
+  }).join('\n');
   document.getElementById('rawView').textContent = doc.rawText;
 
-  // Tab switching
   window.switchTab = function(tab) {
-    document.getElementById('tabDoc').classList.toggle('active', tab === 'doc');
-    document.getElementById('tabRaw').classList.toggle('active', tab === 'raw');
-    document.getElementById('docView').style.display = tab === 'doc' ? 'block' : 'none';
-    document.getElementById('rawView').style.display = tab === 'raw' ? 'block' : 'none';
+    document.getElementById('tabDoc').classList.toggle('active', tab==='doc');
+    document.getElementById('tabRaw').classList.toggle('active', tab==='raw');
+    document.getElementById('docView').style.display = tab==='doc'?'block':'none';
+    document.getElementById('rawView').style.display = tab==='raw'?'block':'none';
   };
 
-  // Sidebar: "What this means"
   let profile = readLocal(profileCacheKey(currentUser?.uid), '{}');
   if (currentUser) {
-    const savedProfile = await getProfile(currentUser.uid);
-    if (savedProfile?.profile) {
-      profile = savedProfile.profile;
-      localStorage.setItem(profileCacheKey(currentUser.uid), JSON.stringify(profile));
-      sessionStorage.setItem('userProfile', JSON.stringify(profile));
-    }
+    const sp = await getProfile(currentUser.uid);
+    if (sp?.profile) { profile=sp.profile; localStorage.setItem(profileCacheKey(currentUser.uid),JSON.stringify(profile)); sessionStorage.setItem('userProfile',JSON.stringify(profile)); }
   }
-  const stateStr = profile.state || 'your state';
-  const incomeStr = profile.wageType === 'salary' ? profile.salary : `${profile.hourlyRate}/hr`;
 
-  const meanings = {
-    credit_card: `This is a high-cost credit card. The 29.99% APR means carrying any balance from month to month gets very expensive, very fast. ${incomeStr ? `On your income of ${incomeStr} in ${stateStr},` : 'For most people,'} a $1,000 balance could cost you ~$300 extra per year just in interest.`,
-    paystub: `This pay stub shows your gross-to-net breakdown. ${incomeStr ? `At ${incomeStr} in ${stateStr},` : ''} your biggest opportunity: you're currently contributing 0% to your 401(k) while your employer will match up to 5% — that's free money you're leaving unclaimed every paycheck.`,
-    student_loan: `This is a federal unsubsidized loan — interest starts accruing immediately, even while you're in school. By graduation, your $28,500 loan could grow to ~$35,949 before you make a single payment. Income-driven repayment options can significantly reduce your monthly burden.`,
-    job_offer: `This offer letter has a true total compensation of ~$117,440 — not just the $95K base salary. Key risks: the sign-on bonus has a 12-month clawback, equity vests over 4 years with a 1-year cliff, and the non-compete clause may limit future job options.`,
-    apartment_lease: `This lease gives your landlord significant flexibility: no rent control (building is exempt from AB 1482), $150 late fees that compound daily, and a $4,200 penalty if you break the lease early. Document everything on move-in day to protect your $4,200 security deposit.`
+  const incomeStr = profile.wageType==='salary'?profile.salary:`${profile.hourlyRate||'?'}/hr`;
+  const stateStr  = profile.state||'your state';
+  const meanings  = {
+    credit_card:`This is a high-cost credit card. The 29.99% APR means carrying any balance from month to month gets very expensive, very fast. ${incomeStr?`On your income of ${incomeStr} in ${stateStr},`:'For most people,'} a $1,000 balance could cost you ~$300 extra per year just in interest.`,
+    paystub:`This pay stub shows your gross-to-net breakdown. ${incomeStr?`At ${incomeStr} in ${stateStr},`:''} your biggest opportunity: you're currently contributing 0% to your 401(k) while your employer will match up to 5% — that's free money you're leaving unclaimed every paycheck.`,
+    student_loan:`This is a federal unsubsidized loan — interest starts accruing immediately, even while you're in school. By graduation, your $28,500 loan could grow to ~$35,949 before you make a single payment. Income-driven repayment options can significantly reduce your monthly burden.`,
+    job_offer:`This offer letter has a true total compensation of ~$117,440 — not just the $95K base salary. Key risks: the sign-on bonus has a 12-month clawback, equity vests over 4 years with a 1-year cliff, and the non-compete clause may limit future job options.`,
+    apartment_lease:`This lease gives your landlord significant flexibility: no rent control (building is exempt from AB 1482), $150 late fees that compound daily, and a $4,200 penalty if you break the lease early. Document everything on move-in day to protect your $4,200 security deposit.`,
   };
+  setTimeout(()=>{
+    document.getElementById('meaningBody').innerHTML=`<p style="font-size:13px;color:var(--text-secondary);line-height:1.7;">${aiDoc?doc.meaning:(meanings[docKey]||meanings[docId]||meanings['credit_card'])}</p>`;
+  },600);
 
-  setTimeout(() => {
-    const meaningText = aiDoc ? doc.meaning : (meanings[docKey] || meanings[docId] || meanings['credit_card']);
-    document.getElementById('meaningBody').innerHTML = `<p style="font-size:13px; color:var(--text-secondary); line-height:1.7;">${meaningText}</p>`;
-  }, 600);
-
-  // Sidebar: Risks
-  setTimeout(() => {
-    const dangers = doc.highlights.filter(h => h.level === 'danger');
-    const warns = doc.highlights.filter(h => h.level === 'warn');
-    const riskItems = [...dangers, ...warns].slice(0, 5).map(h => `
-      <div class="risk-item" style="cursor:pointer;" onclick="openGlossary('${encodeURIComponent(h.term)}')">
+  setTimeout(()=>{
+    const items=[...doc.highlights.filter(h=>h.level==='danger'),...doc.highlights.filter(h=>h.level==='warn')].slice(0,5);
+    document.getElementById('risksBody').innerHTML=items.map(h=>`
+      <div class="risk-item" onclick="openGlossary('${encodeURIComponent(h.term)}')">
         <div class="risk-dot ${h.level}"></div>
-        <div class="risk-text">
-          <span class="risk-term">${h.term.length > 40 ? h.term.slice(0,38)+'…' : h.term}</span><br>
-          ${h.explanation.slice(0, 90)}…
-        </div>
-      </div>
-    `).join('');
-    document.getElementById('risksBody').innerHTML = riskItems;
-  }, 900);
+        <div class="risk-text"><span class="risk-term">${h.term.length>40?h.term.slice(0,38)+'…':h.term}</span><br>${h.explanation.slice(0,90)}…</div>
+      </div>`).join('');
+  },900);
 
-  // Sidebar: Actions
-  const actions = {
-    credit_card: [
-      'Pay your full balance each month to use the 25-day grace period — you\'ll pay 0% interest.',
-      'Never use this card for cash advances (34.99% APR, no grace period).',
-      'Calculate if the $95 annual fee is worth it based on your rewards. If not, call and ask for a fee waiver.'
-    ],
-    paystub: [
-      'Immediately increase your 401(k) contribution to at least 5% to capture the full employer match.',
-      'Review your W-4 withholding — you may be over-withheld. Use the IRS withholding estimator.',
-      'If self-employed income exists, remember you owe both employee and employer FICA (15.3%).'
-    ],
-    student_loan: [
-      'Make interest payments while in school to prevent capitalization and stop your balance from growing.',
-      'Apply for Income-Driven Repayment (SAVE plan) after graduation to cap payments at ~5-10% of income.',
-      'If working in public service or nonprofit, start tracking your 120 qualifying payments for PSLF.'
-    ],
-    job_offer: [
-      'Negotiate: ask to remove or narrow the non-compete clause before signing.',
-      'Immediately contribute at least 4% to your 401(k) on day one to capture the full employer match.',
-      'Set a calendar reminder at 11 months to evaluate your role — do not leave before 1 year with the sign-on clawback.'
-    ],
-    apartment_lease: [
-      'Take timestamped photos and video of every room, wall, and fixture on move-in day.',
-      'Set up autopay for rent — a single late payment costs $150+$15/day under this agreement.',
-      'Negotiate a rent increase cap before signing, since this building is exempt from rent control.'
-    ]
+  const actions={
+    credit_card:['Pay your full balance each month to use the 25-day grace period — you\'ll pay 0% interest.','Never use this card for cash advances (34.99% APR, no grace period).','Calculate if the $95 annual fee is worth it based on your rewards.'],
+    paystub:['Immediately increase your 401(k) contribution to at least 5% to capture the full employer match.','Review your W-4 withholding — you may be over-withheld.','If self-employed income exists, remember you owe both employee and employer FICA (15.3%).'],
+    student_loan:['Make interest payments while in school to prevent capitalization.','Apply for Income-Driven Repayment (SAVE plan) after graduation.','If in public service, track your 120 qualifying payments for PSLF.'],
+    job_offer:['Negotiate: ask to remove or narrow the non-compete clause before signing.','Immediately contribute at least 4% to your 401(k) on day one.','Set a calendar reminder at 11 months — do not leave before 1 year with the sign-on clawback.'],
+    apartment_lease:['Take timestamped photos of every room and fixture on move-in day.','Set up autopay for rent — a single late payment costs $150+$15/day.','Negotiate a rent increase cap before signing.'],
   };
+  setTimeout(()=>{
+    const acts=aiDoc?(doc.actions||[]):(actions[docKey]||actions[docId]||actions['credit_card']);
+    document.getElementById('actionsBody').innerHTML=acts.map((a,i)=>`<div class="action-item"><div class="action-num">${i+1}</div><div class="action-text">${a}</div></div>`).join('');
+  },1200);
 
-  setTimeout(() => {
-    const acts = aiDoc ? (doc.actions || []) : (actions[docKey] || actions[docId] || actions['credit_card']);
-    document.getElementById('actionsBody').innerHTML = acts.map((a, i) => `
-      <div class="action-item">
-        <div class="action-num">${i+1}</div>
-        <div class="action-text">${a}</div>
-      </div>
-    `).join('');
-  }, 1200);
-
-  // Glossary
-  let currentHighlight = null;
-
-  window.openGlossary = function(encodedTerm) {
-    const term = decodeURIComponent(encodedTerm);
-    const h = doc.highlights.find(h => h.term.toLowerCase() === term.toLowerCase())
-           || doc.highlights.find(h => term.toLowerCase().includes(h.term.toLowerCase()))
-           || doc.highlights.find(h => h.term.toLowerCase().includes(term.toLowerCase()));
-    if (!h) return;
-    currentHighlight = h;
-
-    const levelMap = { danger: { label: '⚠ High risk', cls: 'badge-red' }, warn: { label: '⚠ Note', cls: 'badge-amber' }, good: { label: '✓ Positive term', cls: 'badge-green' } };
-    const lv = levelMap[h.level] || levelMap['warn'];
-    document.getElementById('gpLevel').textContent = lv.label;
-    document.getElementById('gpLevel').className = `gp-level badge ${lv.cls}`;
-    document.getElementById('gpTerm').textContent = h.term;
-    document.getElementById('gpExplanation').textContent = h.explanation;
+  let currentHighlight=null;
+  window.openGlossary=function(encodedTerm){
+    const term=decodeURIComponent(encodedTerm);
+    const h=doc.highlights.find(h=>h.term.toLowerCase()===term.toLowerCase())||doc.highlights.find(h=>term.toLowerCase().includes(h.term.toLowerCase()))||doc.highlights.find(h=>h.term.toLowerCase().includes(term.toLowerCase()));
+    if(!h)return;
+    currentHighlight=h;
+    const lm={danger:{label:'⚠ High risk',cls:'badge-red'},warn:{label:'⚠ Note',cls:'badge-amber'},good:{label:'✓ Positive term',cls:'badge-green'}};
+    const lv=lm[h.level]||lm['warn'];
+    document.getElementById('gpLevel').textContent=lv.label;
+    document.getElementById('gpLevel').className=`gp-level badge ${lv.cls}`;
+    document.getElementById('gpTerm').textContent=h.term;
+    document.getElementById('gpExplanation').textContent=h.explanation;
     document.getElementById('gpAnalogy').classList.remove('visible');
-    document.getElementById('gpAnalogy').textContent = '';
-    document.getElementById('analogyLabel').style.display = 'none';
-    document.getElementById('analogyBtn').style.display = 'inline-flex';
+    document.getElementById('gpAnalogy').textContent='';
+    document.getElementById('analogyLabel').style.display='none';
+    document.getElementById('analogyBtn').style.display='inline-flex';
     document.getElementById('glossaryOverlay').classList.add('open');
   };
+  window.showAnalogy=function(){ if(!currentHighlight?.analogy)return; document.getElementById('gpAnalogy').textContent=currentHighlight.analogy; document.getElementById('gpAnalogy').classList.add('visible'); document.getElementById('analogyLabel').style.display='block'; document.getElementById('analogyBtn').style.display='none'; };
+  window.closeGlossaryBtn=function(){ document.getElementById('glossaryOverlay').classList.remove('open'); };
+  window.closeGlossary=function(e){ if(e.target===document.getElementById('glossaryOverlay'))window.closeGlossaryBtn(); };
 
-  window.showAnalogy = function() {
-    if (!currentHighlight || !currentHighlight.analogy) return;
-    document.getElementById('gpAnalogy').textContent = currentHighlight.analogy;
-    document.getElementById('gpAnalogy').classList.add('visible');
-    document.getElementById('analogyLabel').style.display = 'block';
-    document.getElementById('analogyBtn').style.display = 'none';
-  };
+  // ── BSD PANEL ─────────────────────────────────────────────
+  const bsdProfile = readLocal(profileCacheKey(currentUser?.uid), '{}');
+  let bsdScanned = false;
 
-  window.closeGlossaryBtn = function() {
-    document.getElementById('glossaryOverlay').classList.remove('open');
+  window.openBSD = function() {
+    document.getElementById('bsdOverlay').classList.add('open');
+    document.getElementById('bsdPanel').classList.add('open');
+    if (!bsdScanned) { bsdScanned=true; runBSDScan(); }
   };
+  window.closeBSD = function() {
+    document.getElementById('bsdOverlay').classList.remove('open');
+    document.getElementById('bsdPanel').classList.remove('open');
+  };
+  window.setBSDMode = function(mode) {
+    document.getElementById('modeReal').classList.toggle('active', mode==='real');
+    document.getElementById('modeSample').classList.toggle('active', mode==='sample');
+    document.getElementById('bsdRealResults').style.display   = mode==='real'   ? 'block':'none';
+    document.getElementById('bsdSampleResults').style.display = mode==='sample' ? 'block':'none';
+    document.getElementById('bsdScanning').style.display = 'none';
+  };
+  window.toggleBSP = function(cid, i) { document.getElementById(`bspcard-${cid}-${i}`)?.classList.toggle('open'); };
 
-  window.closeGlossary = function(e) {
-    if (e.target === document.getElementById('glossaryOverlay')) closeGlossaryBtn();
-  };
+  function bsdEstGross() {
+    if (bsdProfile.wageType==='salary'&&bsdProfile.salary) return parseFloat(bsdProfile.salary.replace(/[^0-9.]/g,''))/12;
+    if (bsdProfile.wageType==='hourly'&&bsdProfile.hourlyRate) return parseFloat(bsdProfile.hourlyRate.replace(/[^0-9.]/g,''))*(parseFloat(bsdProfile.hoursPerWeek)||40)*4.33;
+    return null;
+  }
+  function bsdDocHas(kw){ return (doc.rawText||'').toLowerCase().includes(kw.toLowerCase()); }
+  function bsdFindHL(kw){ return (doc.highlights||[]).find(h=>h.term.toLowerCase().includes(kw.toLowerCase())||(h.explanation||'').toLowerCase().includes(kw.toLowerCase())); }
+  function bsdGetAPR(){ const h=bsdFindHL('APR')||bsdFindHL('interest rate'); if(!h)return null; const m=h.term.match(/([\d.]+)%/); return m?parseFloat(m[1]):null; }
+
+  function detectBSDSpots() {
+    const spots=[];
+    const gross=bsdEstGross(), net=gross?gross*0.72:null, annual=gross?gross*12:null;
+    const dt=(doc.type||'').toLowerCase();
+    const isStub=dt.includes('pay')||dt.includes('stub')||dt.includes('w-2');
+    const isCard=dt.includes('credit')||dt.includes('card');
+    const isLease=dt.includes('lease')||dt.includes('rent');
+    const isLoan=dt.includes('loan')||dt.includes('student');
+    const isOffer=dt.includes('offer')||dt.includes('job');
+    const hasLoans=bsdProfile.hasLoans==='yes', hasBenefits=bsdProfile.hasBenefits==='yes';
+    const isHourly=bsdProfile.wageType==='hourly';
+    const isGig=(bsdProfile.empType||'').toLowerCase().includes('gig')||(bsdProfile.empType||'').toLowerCase().includes('1099');
+
+    if (isStub&&hasBenefits) {
+      const text=(doc.rawText||'').toLowerCase();
+      if (text.includes('401')&&(text.includes('0%')||text.includes('$0')||text.includes('0.00'))) {
+        const missed=annual?Math.round(annual*0.05):null;
+        spots.push({severity:'critical',icon:'ti-piggy-bank',title:'Missing employer 401(k) match',summary:`You contribute 0% but your employer matches up to 5%. That's ${missed?'$'+missed.toLocaleString()+'/year':'thousands'} left uncollected.`,amount:missed?{val:'-$'+missed.toLocaleString()+'/yr',type:'loss'}:null,why:'Employer match is free compensation — identical to refusing part of your salary. At your age, this compounds dramatically over 30 years.',actions:['Log into HR portal → set contribution to at least 5% today.','Even starting at 1% and increasing quarterly makes a difference.']});
+      }
+    }
+    if (isCard) {
+      const apr=bsdGetAPR();
+      if (apr&&apr>24) {
+        const bal=gross?Math.round(gross*0.3):2000, mi=Math.round(bal*(apr/100/12));
+        spots.push({severity:apr>28?'critical':'warning',icon:'ti-percentage',title:`${apr}% APR — this card is expensive`,summary:hasLoans?`You have student loans + a ${apr}% APR card. Two competing high-interest debts create real squeeze risk.`:`On a $${bal.toLocaleString()} balance, you'd pay $${mi}/month in interest alone.`,amount:{val:'-$'+mi+'/mo interest',type:'loss'},why:'At this rate, minimum payments barely cover interest. The balance barely moves while the clock ticks.',actions:['Pay full statement balance monthly to use the grace period (0% interest).','If carrying a balance, explore a 0% APR balance transfer card.']});
+      }
+    }
+    if (isLease&&net) {
+      const m=(doc.rawText||'').match(/\$[\s]*([\d,]+)\s*(?:\/month|per month|monthly)/i);
+      if (m) { const rent=parseFloat(m[1].replace(/,/g,'')), pct=Math.round(rent/net*100); if(pct>33) spots.push({severity:pct>50?'critical':'warning',icon:'ti-home-dollar',title:`Rent is ${pct}% of your take-home`,summary:isHourly?`As an hourly worker, a slow week could mean you can't cover rent without dipping into savings.`:`Standard guideline is 30%. At ${pct}%, you have very little buffer.`,amount:{val:pct+'% of income',type:pct>45?'loss':'neutral'},why:'High rent ratios make it nearly impossible to save, invest, or handle emergencies without going into debt.',actions:['Budget all monthly obligations before signing.',isHourly?'Build 2 months rent as a buffer before committing.':'Target a 3-month emergency fund alongside this lease.']}); }
+    }
+    if (isGig&&annual) spots.push({severity:'warning',icon:'ti-receipt-tax',title:'No one is withholding your taxes',summary:`As a gig/1099 worker you owe ~15.3% self-employment tax + income tax. Estimated: $${Math.round(annual*0.25).toLocaleString()}/year.`,amount:{val:'-$'+Math.round(annual*0.25).toLocaleString()+'/yr owed',type:'loss'},why:'Gig workers who don\'t pay quarterly estimates face a large lump sum + IRS penalties in April.',actions:['Set aside 25–30% of every payment in a separate account.','Pay quarterly estimated taxes (Jan 15, Apr 15, Jun 15, Sep 15).']});
+    if (isOffer&&bsdDocHas('non-compete')) spots.push({severity:'warning',icon:'ti-lock',title:'Non-compete clause in your offer',summary:`This could restrict your ability to work for competitors for 12–24 months after leaving${bsdProfile.state==='California'?' — though CA largely prohibits enforcement':''}.`,amount:{val:'Job mobility risk',type:'neutral'},why:'Depending on state enforcement, a broad non-compete could force you to take a lower-paying job or wait out the clause.',actions:['Ask to narrow scope: shorter duration, specific named competitors only.',bsdProfile.state==='California'?'CA broadly bans non-competes — confirm with a lawyer.':'Budget $200–400 for a lawyer review before signing.']});
+    if (spots.length===0) spots.push({severity:'good',icon:'ti-circle-check',title:'No major blind spots detected',summary:'Based on your profile and this document, we didn\'t find significant mismatches. Complete your profile for a deeper scan.',amount:null,why:'',actions:['Keep your profile updated as your situation changes.','Upload other documents for more personalized insights.']});
+    return spots;
+  }
+
+  function renderBSDSpots(spots, cid) {
+    const sevLabel={critical:'⚠ Critical',warning:'⚡ Watch out',good:'✓ Looks okay'};
+    const sevColor={critical:'var(--red-600)',warning:'var(--amber-800)',good:'var(--green-600)'};
+    document.getElementById(cid).innerHTML=spots.map((s,i)=>`
+      <div class="bsp-card ${s.severity}" id="bspcard-${cid}-${i}" onclick="toggleBSP('${cid}',${i})">
+        <div class="bsp-header">
+          <div class="bsp-icon ${s.severity}"><i class="ti ${s.icon}"></i></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:10px;font-weight:700;color:${sevColor[s.severity]};text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">${sevLabel[s.severity]}</div>
+            <div class="bsp-title">${s.title}</div>
+            <div class="bsp-summary">${s.summary}</div>
+            ${s.amount?`<div class="bsp-amount ${s.amount.type}">${s.amount.val}</div>`:''}
+          </div>
+          <i class="ti ti-chevron-down" style="color:var(--text-tertiary);font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+        </div>
+        ${s.why?`<div class="bsp-detail"><div class="bsp-detail-text"><strong style="color:var(--text-primary);">Why this matters:</strong> ${s.why}</div><div class="bsp-action-list">${s.actions.map(a=>`<div class="bsp-action"><i class="ti ti-arrow-right"></i>${a}</div>`).join('')}</div></div>`:''}
+      </div>`).join('');
+  }
+
+  const SAMPLE_SPOTS=[
+    {severity:'critical',icon:'ti-piggy-bank',title:'Missing $3,250/year in employer match',summary:'Alex (age 24, full-time) contributes 0% to their 401(k). Employer matches up to 5% of $65K salary. That\'s $3,250/year in unclaimed compensation.',amount:{val:'-$3,250/yr',type:'loss'},why:'At age 24, $3,250/year compounding at 7% for 40 years = ~$686,000 at retirement. Every year of delay costs more than the last.',actions:['Set 401(k) contribution to 5% in HR portal.','This reduces take-home by ~$105/month but captures $271/month in free match.']},
+    {severity:'critical',icon:'ti-percentage',title:'29.99% APR + student loans = debt spiral risk',summary:'Jordan has $18K in student loans and just opened a card at 29.99% APR. On a $2,000 balance, interest alone is $50/month before touching principal.',amount:{val:'-$600/yr in interest',type:'loss'},why:'Two high-interest debts compete for the same income. Minimum payments on both means both balances barely shrink.',actions:['Pay full card balance monthly to avoid interest entirely.','Avalanche method: attack highest APR first.']},
+    {severity:'warning',icon:'ti-home-dollar',title:'Rent is 54% of estimated take-home',summary:'Sam earns $22/hr (35hrs/wk) in California — ~$2,350/month take-home. This lease is $1,270/month. That\'s 54% of income before food, transport, or debt.',amount:{val:'54% of income',type:'loss'},why:'As an hourly worker, income varies. One slow week means choosing between rent and groceries.',actions:['Build 2 months rent ($2,540) in savings before signing.','Look for roommates to cut housing cost below 30% of take-home.']}
+  ];
+
+  async function runBSDScan() {
+    document.getElementById('bsdScanning').style.display='block';
+    document.getElementById('bsdRealResults').style.display='none';
+    document.getElementById('bsdSampleResults').style.display='none';
+    await new Promise(r=>setTimeout(r,1800));
+    const spots=detectBSDSpots();
+    let score=100;
+    spots.forEach(s=>{if(s.severity==='critical')score-=25;else if(s.severity==='warning')score-=14;});
+    score=Math.max(10,Math.min(100,score));
+    const scoreColor=score>=70?'#1D9E75':score>=45?'#EF9F27':'#E24B4A';
+    const scoreClass=score>=70?'low':score>=45?'mid':'high';
+    const critCount=spots.filter(s=>s.severity==='critical').length;
+    const warnCount=spots.filter(s=>s.severity==='warning').length;
+
+    document.getElementById('bsdRealResults').innerHTML=`
+      <div class="bsd-score-bar">
+        <div class="bsd-score-num ${scoreClass}">${score}</div>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">${score>=70?'Good shape':score>=45?'Some blind spots':'High exposure'}</div>
+          <div class="bsd-score-track"><div class="bsd-score-fill" style="width:${score}%;background:${scoreColor};"></div></div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:5px;">${critCount} critical · ${warnCount} warnings · based on your profile + this document</div>
+        </div>
+      </div>`;
+    renderBSDSpots(spots,'bsdRealResults');
+
+    const badgeCount=critCount+warnCount;
+    const badge=document.getElementById('bsdBadge');
+    badge.textContent=badgeCount||'✓';
+    if(!badgeCount) badge.style.background='var(--green-600)';
+
+    document.getElementById('bsdSampleResults').innerHTML=`
+      <div style="padding:10px 14px;background:var(--amber-50);border:1px solid #FDE68A;border-radius:var(--radius-md);font-size:12px;color:var(--amber-800);margin-bottom:16px;display:flex;gap:8px;align-items:flex-start;">
+        <i class="ti ti-info-circle" style="flex-shrink:0;margin-top:1px;"></i>
+        Example profiles — not your data. Shows what blind spots look like for different financial situations.
+      </div>
+      <div class="bsd-score-bar">
+        <div class="bsd-score-num high">31</div>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">High exposure — 3 critical blind spots</div>
+          <div class="bsd-score-track"><div class="bsd-score-fill" style="width:31%;background:#E24B4A;"></div></div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:5px;">Example: Alex, 24 · Full-time · $65K · Has student loans</div>
+        </div>
+      </div>`;
+    renderBSDSpots(SAMPLE_SPOTS,'bsdSampleResults');
+
+    document.getElementById('bsdScanning').style.display='none';
+    window.setBSDMode('real');
+  }
 </script>
 </body>
 </html>

@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FirstAdvisor — Blind Spot Detector</title>
+  <link rel="icon" type="image/png" href="../images/bear.png">
+  <link rel="apple-touch-icon" href="../images/bear.png">
+  <link rel="stylesheet" href="../styles/global.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    /* ── Page header ── */
+    .bsd-hero {
+      background: linear-gradient(135deg, #0a1f15 0%, #0f2d1d 60%, #1a3d28 100%);
+      border-radius: var(--radius-xl);
+      padding: 32px 36px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .bsd-hero::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(29,158,117,0.18) 0%, transparent 70%);
+    }
+    .bsd-hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30px; left: 30%;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(239,159,39,0.10) 0%, transparent 70%);
+    }
+    .bsd-hero-inner { position: relative; z-index: 1; }
+    .bsd-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .bsd-hero-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(29,158,117,0.18); border: 1px solid rgba(29,158,117,0.35);
+      color: #5DCAA5; font-size: 11px; font-weight: 700;
+      padding: 4px 12px; border-radius: 20px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .bsd-hero h2 {
+      font-size: 26px; font-weight: 700; color: #fff;
+      letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 10px;
+    }
+    .bsd-hero p { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 520px; }
+    .bsd-context-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+    .context-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.75); font-size: 12px; font-weight: 500;
+      padding: 5px 12px; border-radius: 20px;
+    }
+    .context-pill i { font-size: 13px; color: #5DCAA5; }
+    .context-pill.missing { color: rgba(255,255,255,0.4); border-style: dashed; }
+    .context-pill.missing i { color: rgba(255,255,255,0.3); }
+
+    /* ── Scan button ── */
+    .scan-btn {
+      display: flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, #1D9E75, #0f6e56);
+      color: #fff; border: none; border-radius: var(--radius-lg);
+      padding: 12px 24px; font-size: 14px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(29,158,117,0.35);
+      transition: all 0.2s;
+    }
+    .scan-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(29,158,117,0.45); }
+    .scan-btn:disabled { background: var(--gray-200); color: var(--text-tertiary); box-shadow: none; transform: none; cursor: not-allowed; }
+    .scan-btn i { font-size: 18px; }
+
+    /* ── Loading state ── */
+    .scan-loading {
+      display: none; text-align: center; padding: 60px 20px;
+    }
+    .scan-loading.visible { display: block; }
+    .radar {
+      width: 80px; height: 80px; border-radius: 50%;
+      border: 2px solid rgba(29,158,117,0.2);
+      margin: 0 auto 24px;
+      position: relative;
+      animation: radarPulse 2s ease-in-out infinite;
+    }
+    .radar::before {
+      content: '';
+      position: absolute; inset: 8px;
+      border-radius: 50%; border: 2px solid rgba(29,158,117,0.3);
+      animation: radarPulse 2s ease-in-out infinite 0.3s;
+    }
+    .radar::after {
+      content: '';
+      position: absolute; inset: 18px;
+      border-radius: 50%; background: rgba(29,158,117,0.15);
+      animation: radarPulse 2s ease-in-out infinite 0.6s;
+    }
+    .radar-dot {
+      position: absolute; top: 50%; left: 50%;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--green-600);
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 12px var(--green-600);
+    }
+    @keyframes radarPulse {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+    .scan-loading h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .scan-loading p { font-size: 13px; color: var(--text-secondary); }
+    .scan-steps { display: flex; flex-direction: column; gap: 6px; max-width: 300px; margin: 20px auto 0; text-align: left; }
+    .scan-step { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-tertiary); padding: 5px 0; transition: color 0.3s; }
+    .scan-step.active { color: var(--green-600); font-weight: 500; }
+    .scan-step.done { color: var(--text-secondary); }
+    .scan-step i { font-size: 14px; flex-shrink: 0; }
+    .scan-step.done i { color: var(--green-600); }
+
+    /* ── No data state ── */
+    .no-data {
+      text-align: center; padding: 64px 24px;
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+    }
+    .no-data i { font-size: 48px; color: var(--text-tertiary); display: block; margin-bottom: 16px; }
+    .no-data h3 { font-size: 17px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .no-data p { font-size: 13px; color: var(--text-secondary); max-width: 340px; margin: 0 auto 20px; line-height: 1.6; }
+    .no-data-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── Results ── */
+    .results-wrap { display: none; }
+    .results-wrap.visible { display: block; }
+
+    .results-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .results-header h3 { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    .results-header p { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .severity-pills { display: flex; gap: 8px; }
+    .sev-pill {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px;
+    }
+    .sev-pill.critical { background: #FCEBEB; color: var(--red-600); }
+    .sev-pill.warning { background: var(--amber-50); color: var(--amber-800); }
+    .sev-pill.opportunity { background: var(--green-50); color: var(--green-600); }
+
+    /* ── Blind spot card ── */
+    .bs-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      margin-bottom: 16px;
+      transition: box-shadow 0.2s;
+    }
+    .bs-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+    .bs-card.critical { border-left: 4px solid var(--red-400); }
+    .bs-card.warning { border-left: 4px solid var(--amber-400); }
+    .bs-card.opportunity { border-left: 4px solid var(--green-200); }
+
+    .bs-header {
+      padding: 18px 22px 14px;
+      display: flex; align-items: flex-start; gap: 14px;
+      cursor: pointer;
+    }
+    .bs-icon {
+      width: 44px; height: 44px; border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .bs-icon.critical { background: #FCEBEB; color: var(--red-600); }
+    .bs-icon.warning { background: var(--amber-50); color: var(--amber-800); }
+    .bs-icon.opportunity { background: var(--green-50); color: var(--green-600); }
+
+    .bs-title-area { flex: 1; min-width: 0; }
+    .bs-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
+      border-radius: 20px; margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .bs-badge.critical { background: #FCEBEB; color: var(--red-600); }
+    .bs-badge.warning { background: var(--amber-50); color: var(--amber-800); }
+    .bs-badge.opportunity { background: var(--green-50); color: var(--green-600); }
+
+    .bs-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; line-height: 1.3; }
+    .bs-summary { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    .bs-impact {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 10px; font-size: 13px; font-weight: 700;
+      color: var(--text-primary);
+    }
+    .bs-impact .amount { font-size: 18px; }
+    .bs-impact .amount.loss { color: var(--red-600); }
+    .bs-impact .amount.gain { color: var(--green-600); }
+    .bs-impact .amount.neutral { color: var(--amber-800); }
+
+    .bs-chevron { margin-left: auto; color: var(--text-tertiary); font-size: 18px; transition: transform 0.25s; flex-shrink: 0; margin-top: 2px; }
+    .bs-card.expanded .bs-chevron { transform: rotate(180deg); }
+
+    /* ── Expandable detail ── */
+    .bs-detail {
+      display: none;
+      padding: 0 22px 22px;
+      border-top: 1px solid var(--border);
+      margin-top: -2px;
+    }
+    .bs-card.expanded .bs-detail { display: block; }
+
+    .bs-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+    .detail-block { background: var(--bg-muted); border-radius: var(--radius-md); padding: 14px 16px; }
+    .detail-block-label { font-size: 10px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+    .detail-block-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+    .detail-block-text strong { color: var(--text-primary); }
+
+    .bs-why-matters {
+      margin-top: 16px; padding: 14px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px; line-height: 1.65;
+    }
+    .bs-why-matters.critical { background: #FFF5F5; border: 1px solid #FECACA; color: #7F1D1D; }
+    .bs-why-matters.warning { background: var(--amber-50); border: 1px solid #FDE68A; color: #78350F; }
+    .bs-why-matters.opportunity { background: var(--green-50); border: 1px solid var(--green-200); color: #14532D; }
+    .bs-why-matters strong { display: block; margin-bottom: 5px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
+
+    .bs-actions-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .bs-action {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 14px; background: var(--bg-surface);
+      border: 1px solid var(--border); border-radius: var(--radius-md);
+      font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+    }
+    .bs-action i { color: var(--green-600); font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Score ring ── */
+    .score-section {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 24px;
+      display: flex; align-items: center; gap: 28px;
+      margin-bottom: 20px;
+    }
+    .score-ring-wrap { position: relative; flex-shrink: 0; }
+    .score-ring { transform: rotate(-90deg); }
+    .score-ring-bg { fill: none; stroke: var(--bg-muted); stroke-width: 8; }
+    .score-ring-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+    .score-val {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .score-val .num { font-size: 28px; font-weight: 800; color: var(--text-primary); line-height: 1; }
+    .score-val .lbl { font-size: 10px; color: var(--text-tertiary); margin-top: 2px; }
+    .score-info h4 { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; }
+    .score-info p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+    .score-breakdown { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+    .score-mini { text-align: center; }
+    .score-mini .sm-val { font-size: 16px; font-weight: 700; }
+    .score-mini .sm-lbl { font-size: 10px; color: var(--text-tertiary); margin-top: 2px; }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Blind Spot Detector</h1>
+        <p>Personalized risks you might not know to look for</p>
+      </div>
+      <div class="topbar-right">
+        <a href="./upload.html" class="btn btn-secondary btn-sm"><i class="ti ti-upload"></i> Upload new doc</a>
+        <a href="./visualizer.html" class="btn btn-primary btn-sm"><i class="ti ti-chart-arrows-vertical"></i> Future impact</a>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- Hero -->
+      <div class="bsd-hero">
+        <div class="bsd-hero-inner">
+          <div class="bsd-hero-top">
+            <div>
+              <div class="bsd-hero-label"><i class="ti ti-radar"></i> AI-powered cross-reference</div>
+              <h2>What generic AI won't tell you.</h2>
+              <p>We combine your personal profile with your uploaded document to find blind spots that only apply to <em>you</em> — not someone with a different income, job, or goals.</p>
+            </div>
+            <button class="scan-btn" id="scanBtn" onclick="runScan()">
+              <i class="ti ti-radar"></i> Run my scan
+            </button>
+          </div>
+          <div class="bsd-context-pills" id="contextPills">
+            <div class="context-pill missing"><i class="ti ti-user"></i> No profile yet</div>
+            <div class="context-pill missing"><i class="ti ti-file"></i> No document yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="scan-loading" id="scanLoading">
+        <div class="radar"><div class="radar-dot"></div></div>
+        <h3>Scanning your financial picture...</h3>
+        <p>Cross-referencing your profile with your document</p>
+        <div class="scan-steps">
+          <div class="scan-step" id="step1"><i class="ti ti-user"></i> Reading your profile</div>
+          <div class="scan-step" id="step2"><i class="ti ti-file-text"></i> Parsing your document</div>
+          <div class="scan-step" id="step3"><i class="ti ti-git-compare"></i> Cross-referencing data</div>
+          <div class="scan-step" id="step4"><i class="ti ti-bulb"></i> Generating personalized insights</div>
+          <div class="scan-step" id="step5"><i class="ti ti-calculator"></i> Estimating financial impact</div>
+        </div>
+      </div>
+
+      <!-- No data state -->
+      <div class="no-data" id="noDataState" style="display:none;">
+        <i class="ti ti-radar-off"></i>
+        <h3>We need a little more to work with</h3>
+        <p id="noDataMsg">Complete your profile and upload a document to unlock your personalized blind spot analysis.</p>
+        <div class="no-data-actions">
+          <a href="./onboarding.html" class="btn btn-primary"><i class="ti ti-user"></i> Complete profile</a>
+          <a href="./upload.html" class="btn btn-secondary"><i class="ti ti-upload"></i> Upload document</a>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="results-wrap" id="resultsWrap">
+
+        <!-- Score card -->
+        <div class="score-section" id="scoreSection">
+          <div class="score-ring-wrap">
+            <svg class="score-ring" width="96" height="96" viewBox="0 0 96 96">
+              <circle class="score-ring-bg" cx="48" cy="48" r="40"/>
+              <circle class="score-ring-fill" id="scoreRingFill" cx="48" cy="48" r="40"
+                stroke="#1D9E75"
+                stroke-dasharray="251.2"
+                stroke-dashoffset="251.2"/>
+            </svg>
+            <div class="score-val">
+              <div class="num" id="scoreNum">—</div>
+              <div class="lbl">/ 100</div>
+            </div>
+          </div>
+          <div class="score-info">
+            <h4 id="scoreLabel">Financial Awareness Score</h4>
+            <p id="scoreDesc">Based on your profile and document, here's how exposed you are to financial blind spots right now.</p>
+            <div class="score-breakdown" id="scoreBreakdown"></div>
+          </div>
+        </div>
+
+        <!-- Results header -->
+        <div class="results-header">
+          <div>
+            <h3 id="resultsTitle">Your blind spots</h3>
+            <p id="resultsSubtitle"></p>
+          </div>
+          <div class="severity-pills" id="severityPills"></div>
+        </div>
+
+        <!-- Cards inject here -->
+        <div id="blindSpotCards"></div>
+
+        <!-- Footer note -->
+        <div style="margin-top: 20px; padding: 14px 18px; background: var(--bg-muted); border-radius: var(--radius-md); font-size: 12px; color: var(--text-tertiary); display: flex; align-items: flex-start; gap: 8px;">
+          <i class="ti ti-info-circle" style="flex-shrink:0; margin-top:1px;"></i>
+          <span>These insights are personalized estimates based on your profile and document data. Dollar figures are approximations. This is not financial advice — consult a licensed advisor for major decisions.</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { renderSidebar } from '../components/sidebar.js';
+  import { SAMPLE_DOCUMENTS } from '../data/sample-documents.js';
+
+  renderSidebar('blindspot');
+
+  // ── Load data ──────────────────────────────────────────────
+  const profile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+  const activeDocId = localStorage.getItem('activeDoc');
+  const aiAnalysis = JSON.parse(localStorage.getItem('aiAnalysis') || 'null');
+  const doc = aiAnalysis || (activeDocId ? SAMPLE_DOCUMENTS[activeDocId] : null);
+
+  // ── Populate context pills ─────────────────────────────────
+  function buildContextPills() {
+    const pills = document.getElementById('contextPills');
+    const items = [];
+
+    if (profile.wageType === 'salary' && profile.salary) {
+      items.push({ icon: 'ti-coin', text: profile.salary + '/yr' });
+    } else if (profile.wageType === 'hourly' && profile.hourlyRate) {
+      items.push({ icon: 'ti-coin', text: profile.hourlyRate + '/hr' });
+    } else {
+      items.push({ icon: 'ti-coin', text: 'Income unknown', missing: true });
+    }
+
+    if (profile.state) items.push({ icon: 'ti-map-pin', text: profile.state });
+    else items.push({ icon: 'ti-map-pin', text: 'State unknown', missing: true });
+
+    if (profile.empType) items.push({ icon: 'ti-briefcase', text: profile.empType });
+    if (profile.age) items.push({ icon: 'ti-user', text: 'Age ' + profile.age });
+    if (profile.hasLoans === 'yes') items.push({ icon: 'ti-school', text: 'Has student loans' });
+    if (profile.hasBenefits === 'yes') items.push({ icon: 'ti-heart', text: 'Has employer benefits' });
+    if ((profile.selectedGoals || []).length) items.push({ icon: 'ti-target', text: profile.selectedGoals.join(', ') });
+
+    if (doc) items.push({ icon: 'ti-file-check', text: doc.name || doc.filename || 'Document loaded' });
+    else items.push({ icon: 'ti-file-x', text: 'No document', missing: true });
+
+    pills.innerHTML = items.map(item =>
+      `<div class="context-pill ${item.missing ? 'missing' : ''}">
+        <i class="ti ${item.icon}"></i> ${item.text}
+      </div>`
+    ).join('');
+  }
+  buildContextPills();
+
+  // ── Check if we can run ────────────────────────────────────
+  const hasProfile = !!(profile.state || profile.empType || profile.salary || profile.hourlyRate);
+  const hasDoc = !!doc;
+
+  if (!hasProfile && !hasDoc) {
+    document.getElementById('noDataState').style.display = 'block';
+    document.getElementById('noDataMsg').textContent = 'Complete your profile and upload a document to unlock your personalized blind spot analysis.';
+    document.getElementById('scanBtn').disabled = true;
+  } else if (!hasProfile) {
+    document.getElementById('noDataState').style.display = 'block';
+    document.getElementById('noDataMsg').textContent = 'Your profile is empty. Complete onboarding so we can personalize your blind spot analysis.';
+    document.getElementById('scanBtn').disabled = true;
+  } else if (!hasDoc) {
+    document.getElementById('noDataState').style.display = 'block';
+    document.getElementById('noDataMsg').textContent = 'Upload a financial document first — a pay stub, credit card agreement, lease, or loan offer.';
+    document.getElementById('scanBtn').disabled = true;
+  }
+
+  // ── Helpers ────────────────────────────────────────────────
+  function estimateMonthlyIncome() {
+    if (profile.wageType === 'salary' && profile.salary) {
+      const s = parseFloat(profile.salary.replace(/[^0-9.]/g, ''));
+      return s / 12;
+    }
+    if (profile.wageType === 'hourly' && profile.hourlyRate && profile.hoursPerWeek) {
+      const r = parseFloat(profile.hourlyRate.replace(/[^0-9.]/g, ''));
+      const h = parseFloat(profile.hoursPerWeek);
+      return r * h * 4.33;
+    }
+    if (profile.wageType === 'hourly' && profile.hourlyRate) {
+      const r = parseFloat(profile.hourlyRate.replace(/[^0-9.]/g, ''));
+      return r * 40 * 4.33;
+    }
+    return null;
+  }
+
+  function estimateTakeHome(gross) {
+    // rough estimate: ~72% after fed+state+fica for most US earners
+    return gross ? gross * 0.72 : null;
+  }
+
+  function getDocHighlights() {
+    return (doc && doc.highlights) ? doc.highlights : [];
+  }
+
+  function docHas(keyword) {
+    if (!doc) return false;
+    const search = (doc.rawText || '').toLowerCase() + ' ' + (doc.type || '').toLowerCase() + ' ' + (doc.name || '').toLowerCase();
+    return search.includes(keyword.toLowerCase());
+  }
+
+  function findHighlight(keyword) {
+    return getDocHighlights().find(h =>
+      h.term.toLowerCase().includes(keyword.toLowerCase()) ||
+      (h.explanation || '').toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+
+  function getAPR() {
+    const h = findHighlight('APR') || findHighlight('interest rate') || findHighlight('annual percentage');
+    if (!h) return null;
+    const match = h.term.match(/([\d.]+)%/);
+    return match ? parseFloat(match[1]) : null;
+  }
+
+  function getMonthlyRent() {
+    if (!docHas('rent') && !docHas('lease')) return null;
+    const text = doc.rawText || '';
+    const match = text.match(/\$[\s]*([\d,]+)\s*(?:\/month|per month|monthly)/i);
+    return match ? parseFloat(match[1].replace(/,/g, '')) : null;
+  }
+
+  function get401kContrib() {
+    const text = (doc.rawText || '').toLowerCase();
+    const zeroMatch = text.includes('401') && (text.includes('0%') || text.includes('$0') || text.includes('0.00'));
+    return zeroMatch ? 0 : null;
+  }
+
+  function get401kMatch() {
+    const h = findHighlight('401') || findHighlight('employer match') || findHighlight('match');
+    if (!h) return null;
+    const match = (h.explanation || h.term).match(/([\d.]+)%/);
+    return match ? parseFloat(match[1]) : null;
+  }
+
+  // ── Blind spot rules engine ────────────────────────────────
+  function detectBlindSpots() {
+    const spots = [];
+    const monthlyGross = estimateMonthlyIncome();
+    const monthlyNet = estimateTakeHome(monthlyGross);
+    const annualIncome = monthlyGross ? monthlyGross * 12 : null;
+    const docType = (doc?.type || '').toLowerCase();
+    const isPaystub = docType.includes('pay') || docType.includes('stub') || docType.includes('w-2') || docType.includes('w2');
+    const isCreditCard = docType.includes('credit') || docType.includes('card');
+    const isLoan = docType.includes('loan') || docType.includes('mortgage') || docType.includes('student');
+    const isLease = docType.includes('lease') || docType.includes('rent') || docType.includes('apartment');
+    const isOffer = docType.includes('offer') || docType.includes('job') || docType.includes('employment');
+    const age = parseInt(profile.age) || null;
+    const hasLoans = profile.hasLoans === 'yes';
+    const hasBenefits = profile.hasBenefits === 'yes';
+    const goals = profile.selectedGoals || [];
+    const isHourly = profile.wageType === 'hourly';
+    const isGig = (profile.empType || '').toLowerCase().includes('gig') || (profile.empType || '').toLowerCase().includes('1099') || (profile.empType || '').toLowerCase().includes('self');
+
+    // ── 1. Missing 401k match (paystub) ──
+    if (isPaystub) {
+      const contrib = get401kContrib();
+      const matchPct = get401kMatch();
+      const effectiveMatch = matchPct || 5; // assume 5% if mentioned but unclear
+      if (contrib === 0 && hasBenefits) {
+        const annualMissed = annualIncome ? Math.round(annualIncome * (effectiveMatch / 100)) : null;
+        const over30yrs = annualMissed ? Math.round(annualMissed * 50 * 1.07 ** 30 / 50) : null; // rough compound
+        spots.push({
+          id: 'missing_401k',
+          severity: 'critical',
+          icon: 'ti-piggy-bank',
+          title: 'You\'re leaving free money on the table — every paycheck',
+          summary: `Your pay stub shows 0% 401(k) contribution, but your employer offers a match${matchPct ? ` of up to ${matchPct}%` : ''}. That's compensation you've already earned that you're not collecting.`,
+          impact: annualMissed ? { label: 'Missed per year', value: '$' + annualMissed.toLocaleString(), type: 'loss' } : null,
+          whyMatters: 'An employer match is part of your total compensation — it\'s like refusing a portion of your salary. Because of compound interest, money invested in your 20s and 30s grows dramatically by retirement. Waiting even 5 years to start can cost you tens of thousands.',
+          fromProfile: `You're ${age ? age + ' years old' : 'working full-time'} and your goal${goals.includes('long-term savings') || goals.includes('retirement') ? ' includes long-term savings' : 's suggest you care about your future'}. This directly undermines that.`,
+          fromDoc: `Your pay stub shows $0 in 401(k) deductions${matchPct ? `, while the document references a ${matchPct}% employer match` : ''}.`,
+          actions: [
+            'Log into your HR portal today and set your 401(k) contribution to at least ' + (matchPct || 5) + '% to capture the full employer match.',
+            'If money is tight, start at 1% and increase by 1% every 3 months — most people don\'t notice the difference in their paycheck.',
+            annualMissed ? `You\'re currently missing approximately $${Math.round(annualMissed/12).toLocaleString()}/month in employer contributions.` : 'Ask your HR team what percentage triggers the full employer match.',
+          ]
+        });
+      }
+    }
+
+    // ── 2. High APR + existing debt ──
+    if (isCreditCard) {
+      const apr = getAPR();
+      if (apr && apr > 24) {
+        const riskLevel = apr > 28 ? 'critical' : 'warning';
+        const balanceAssumption = monthlyGross ? Math.round(monthlyGross * 0.3) : 2000;
+        const monthlyInterest = Math.round(balanceAssumption * (apr / 100 / 12));
+        spots.push({
+          id: 'high_apr',
+          severity: riskLevel,
+          icon: 'ti-percentage',
+          title: `${apr}% APR is a debt trap — especially with your financial profile`,
+          summary: hasLoans
+            ? `You already have student loan obligations. Adding high-interest credit card debt at ${apr}% APR creates competing repayment pressure that can spiral quickly.`
+            : `This card's ${apr}% APR is well above the national average. On a $${balanceAssumption.toLocaleString()} balance, you'd pay ~$${monthlyInterest}/month just in interest — before touching the principal.`,
+          impact: { label: 'Monthly interest on avg balance', value: '$' + monthlyInterest, type: 'loss' },
+          whyMatters: `At ${apr}% APR, debt doesn\'t stay still — it compounds. A $3,000 balance that you pay only minimums on could take 4+ years and cost you $2,000+ in interest alone. Combined with ${hasLoans ? 'your existing student loans' : 'limited savings'}, this creates real financial fragility.`,
+          fromProfile: hasLoans
+            ? `You indicated you have student loans. Adding revolving credit card debt at ${apr}% on top creates multiple high-interest obligations competing for your income.`
+            : goals.includes('build savings') || goals.includes('emergency fund')
+            ? `Your goal of building savings is directly undermined by high-interest debt — every dollar in interest paid is a dollar that can\'t go to savings.`
+            : `Your profile suggests ${monthlyNet ? `a monthly take-home of ~$${Math.round(monthlyNet).toLocaleString()}` : 'moderate income'} — high APR debt compounds against this.`,
+          fromDoc: `The card agreement shows ${apr}% APR for purchases${docHas('cash advance') ? ', and even higher rates for cash advances' : ''}.`,
+          actions: [
+            'Never carry a balance on this card. Pay the full statement balance before the due date to use the grace period.',
+            'If you already have a balance, calculate your payoff date at your current payment — the result may motivate you to pay more.',
+            'Consider a balance transfer card with 0% intro APR to stop the interest clock while you pay down principal.',
+          ]
+        });
+      }
+    }
+
+    // ── 3. Rent burden (lease) ──
+    if (isLease) {
+      const rent = getMonthlyRent();
+      if (rent && monthlyNet) {
+        const rentPct = Math.round((rent / monthlyNet) * 100);
+        if (rentPct > 33) {
+          const severity = rentPct > 50 ? 'critical' : 'warning';
+          spots.push({
+            id: 'rent_burden',
+            severity,
+            icon: 'ti-home-dollar',
+            title: `Your rent is ${rentPct}% of estimated take-home — that's ${rentPct > 50 ? 'dangerously' : 'uncomfortably'} high`,
+            summary: isHourly
+              ? `As an hourly worker, your income can vary week-to-week. At ${rentPct}% of estimated take-home, a single slow week could mean you can't cover rent without dipping into savings.`
+              : `The standard rule is to keep rent under 30% of take-home pay. At ${rentPct}%, you have very little buffer for unexpected expenses, emergencies, or income disruptions.`,
+            impact: { label: 'Rent as % of take-home', value: rentPct + '%', type: rentPct > 45 ? 'loss' : 'neutral' },
+            whyMatters: `High rent-to-income ratios leave almost no room for savings, debt repayment, or financial emergencies. If you have an unexpected car repair, medical bill, or miss a shift, you have little to fall back on. This creates a cycle where you can\'t save because all income goes to fixed expenses.`,
+            fromProfile: isHourly || isGig
+              ? `You're an hourly/variable-income worker — your take-home isn't guaranteed every month. Fixed obligations like rent at ${rentPct}% create high risk during slow periods.`
+              : `Based on your income${profile.state ? ` in ${profile.state}` : ''}, your estimated monthly take-home is ~$${Math.round(monthlyNet).toLocaleString()}. This lease consumes $${rent.toLocaleString()} of that — $${Math.round(monthlyNet - rent).toLocaleString()} left for everything else.`,
+            fromDoc: `The lease shows monthly rent of $${rent.toLocaleString()}.`,
+            actions: [
+              'Before signing, calculate your full monthly budget: rent + utilities + food + transportation + debt payments. Make sure it adds up to less than your income.',
+              isHourly ? 'Build a 2-month rent buffer in a savings account before signing — this is your safety net for slow weeks.' : 'Aim to build a 3-month emergency fund equal to your rent to handle income disruptions.',
+              'Ask if the landlord will negotiate — offering a longer lease term or a slightly larger deposit sometimes unlocks a lower monthly rate.',
+            ]
+          });
+        }
+      } else if (isLease && !monthlyNet) {
+        // We have a lease but no income data
+        spots.push({
+          id: 'rent_no_income',
+          severity: 'warning',
+          icon: 'ti-home-question',
+          title: 'We can\'t calculate your rent burden without income data',
+          summary: 'Your lease has been analyzed, but without your income information we can\'t tell you what percentage of your take-home goes to rent — one of the most important financial ratios.',
+          impact: null,
+          whyMatters: 'Rent-to-income ratio is one of the strongest predictors of financial stress. The standard guideline is under 30% of take-home pay. Without your income, we can\'t flag if you\'re over this threshold.',
+          fromProfile: 'Your profile doesn\'t include income data. Update your profile to unlock this insight.',
+          fromDoc: getMonthlyRent() ? `Lease shows monthly rent of $${getMonthlyRent().toLocaleString()}.` : 'Lease document loaded.',
+          actions: [
+            'Complete your income info in your profile to get a personalized rent burden calculation.',
+            'Divide your monthly rent by your monthly take-home pay — if it\'s over 0.30 (30%), consider carefully.',
+            'Factor in all housing costs: rent + utilities + renter\'s insurance to get the true monthly housing cost.',
+          ]
+        });
+      }
+    }
+
+    // ── 4. Student loan + credit card double-debt ──
+    if (hasLoans && isCreditCard) {
+      const apr = getAPR();
+      if (apr && apr > 20) {
+        spots.push({
+          id: 'double_debt',
+          severity: 'critical',
+          icon: 'ti-urgent',
+          title: 'Double-debt pressure: student loans + high-APR credit card',
+          summary: `You have student loans and are now considering a credit card with ${apr}% APR. This creates two competing debt obligations — and the credit card interest rate is far more aggressive.`,
+          impact: annualIncome ? { label: 'Est. debt cost as % of income', value: '25–40%', type: 'loss' } : null,
+          whyMatters: 'Multiple high-interest debts create a "debt squeeze." You make payments to multiple creditors, often making only minimum payments on each, which means debt balances barely decrease while interest compounds. This is one of the most common causes of long-term financial stress for people in their 20s and 30s.',
+          fromProfile: `You indicated you have student loan obligations. Taking on a ${apr}% APR credit card significantly increases your total debt load and monthly obligation.`,
+          fromDoc: `This credit card charges ${apr}% APR — far higher than most federal student loan rates (typically 5–7%).`,
+          actions: [
+            'Always pay student loan minimums first, then put as much as possible toward the highest-APR debt.',
+            'Do not use this credit card for everyday spending unless you can pay the full balance monthly — the interest rate makes carrying a balance very costly.',
+            'Look into income-driven repayment for your student loans to free up cash flow for the credit card.',
+          ]
+        });
+      }
+    }
+
+    // ── 5. No emergency buffer signal (any doc type, young age) ──
+    if (age && age < 30 && goals.includes && (goals.includes('build savings') || goals.includes('emergency fund') || goals.length === 0)) {
+      if (isCreditCard || isLoan) {
+        spots.push({
+          id: 'emergency_fund',
+          severity: 'warning',
+          icon: 'ti-lifebuoy',
+          title: 'No emergency fund mentioned — this is your first financial priority',
+          summary: `Before aggressively paying down debt or investing, you need 3–6 months of expenses in a liquid savings account. Without it, one unexpected event puts everything on a credit card.`,
+          impact: monthlyNet ? { label: 'Emergency fund target', value: '$' + Math.round(monthlyNet * 4).toLocaleString(), type: 'neutral' } : null,
+          whyMatters: 'An emergency fund isn\'t about being pessimistic — it\'s about removing the need to use high-interest credit when life happens. Car repairs, medical bills, and job loss are not rare events. Without a buffer, each one pushes you deeper into debt.',
+          fromProfile: `At ${age}, building financial habits now has an outsized long-term impact. The emergency fund is what protects every other financial goal.`,
+          fromDoc: 'Your document involves financial obligations. Without an emergency fund, any disruption forces you to rely on high-interest debt to cover basic expenses.',
+          actions: [
+            monthlyNet ? `Your target is ~$${Math.round(monthlyNet * 3).toLocaleString()}–$${Math.round(monthlyNet * 6).toLocaleString()} (3–6 months of take-home). Start with a $1,000 mini-fund as your first milestone.` : 'Target 3–6 months of take-home pay in a separate high-yield savings account.',
+            'Open a high-yield savings account (HYSA) — many offer 4–5% APY vs. 0.01% at traditional banks.',
+            'Automate a fixed transfer to savings every payday — even $50/month builds the habit and the balance.',
+          ]
+        });
+      }
+    }
+
+    // ── 6. Job offer — non-compete risk ──
+    if (isOffer && docHas('non-compete')) {
+      spots.push({
+        id: 'non_compete',
+        severity: 'warning',
+        icon: 'ti-lock',
+        title: 'Non-compete clause could limit your future job options',
+        summary: 'Your offer letter contains a non-compete agreement. Depending on your state and the scope of the clause, this could restrict your ability to work for competitors for months or years after leaving.',
+        impact: { label: 'Potential income risk', value: 'Variable', type: 'neutral' },
+        whyMatters: 'Non-compete clauses are enforced to varying degrees by state. California broadly prohibits them. Other states enforce them strictly, meaning you might not be able to take a better job in your field for 12–24 months without legal risk.',
+        fromProfile: profile.state ? `In ${profile.state}, non-compete enforcement is ${profile.state === 'California' ? 'extremely rare — California law largely prohibits non-competes' : 'worth reviewing with a lawyer before signing'}.` : 'Enforcement varies by state — check your state\'s rules before signing.',
+        fromDoc: 'The offer letter includes a non-compete clause.',
+        actions: [
+          'Ask the company to narrow the clause: shorter duration (6 months vs. 12), specific competitors only, or remove it entirely.',
+          profile.state === 'California' ? 'You\'re in California — non-competes are broadly unenforceable here, but you should still have a lawyer confirm.' : 'Have a lawyer ($200–400 for a review) confirm the scope and enforceability before you sign.',
+          'Document your concerns in writing — if they refuse to negotiate, at least you\'re entering with clear eyes.',
+        ]
+      });
+    }
+
+    // ── 7. Gig/1099 worker + any financial doc ──
+    if (isGig) {
+      spots.push({
+        id: 'gig_taxes',
+        severity: 'warning',
+        icon: 'ti-receipt-tax',
+        title: 'As a gig/1099 worker, you owe taxes no one is withholding for you',
+        summary: 'Unlike W-2 employees, gig workers pay both the employee and employer portions of FICA taxes (15.3%) plus income tax. This is often a surprise that results in a large year-end tax bill.',
+        impact: annualIncome ? { label: 'Est. self-employment tax owed', value: '$' + Math.round(annualIncome * 0.153).toLocaleString() + '/yr', type: 'loss' } : null,
+        whyMatters: 'If you\'re not setting money aside quarterly, you\'ll owe a large lump sum at tax time — plus potential penalties. Many gig workers are blindsided by this in their first year.',
+        fromProfile: `Your profile indicates ${profile.empType || 'self-employment or gig work'}. No employer is withholding taxes from your pay.`,
+        fromDoc: 'Combined with your financial document, this affects how much of your income is truly "yours" after obligations.',
+        actions: [
+          annualIncome ? `Set aside ~${Math.round((annualIncome * 0.25 / 12))} /month in a separate account for taxes. Pay quarterly estimated taxes (due Jan 15, Apr 15, Jun 15, Sep 15).` : 'Set aside 25–30% of every payment you receive in a separate account for taxes.',
+          'Deduct legitimate business expenses: home office, phone, equipment, mileage — this reduces your taxable income.',
+          'Use IRS Form 1040-ES to calculate and pay quarterly estimated taxes to avoid penalties.',
+        ]
+      });
+    }
+
+    // ── 8. Loan interest capitalization (student loan + young) ──
+    if (isLoan && age && age < 26) {
+      if (docHas('unsubsidized') || docHas('interest') ) {
+        const loanMatch = (doc.rawText || '').match(/\$([\d,]+)/);
+        const loanAmt = loanMatch ? parseFloat(loanMatch[1].replace(/,/g,'')) : null;
+        const graceInterest = loanAmt ? Math.round(loanAmt * 0.065 / 12 * 48) : null;
+        spots.push({
+          id: 'loan_capitalization',
+          severity: 'warning',
+          icon: 'ti-trending-up',
+          title: 'Your loan is likely growing right now, even before you make a payment',
+          summary: `Unsubsidized student loans accrue interest immediately — during school, deferment, and the 6-month grace period. By the time repayment starts, your balance could be significantly higher than what you borrowed.`,
+          impact: graceInterest ? { label: 'Est. interest during school + grace', value: '$' + graceInterest.toLocaleString(), type: 'loss' } : null,
+          whyMatters: 'Interest that accrues during school and deferment eventually "capitalizes" — it gets added to your principal, so you start paying interest on interest. The longer you wait, the more you owe. Making even small interest payments now prevents this.',
+          fromProfile: `At ${age}, you likely have years of school or deferment remaining. Every month without a payment means your balance grows.`,
+          fromDoc: 'This loan appears to be unsubsidized — interest accrues from the disbursement date.',
+          actions: [
+            loanAmt ? `Your loan accrues ~$${Math.round(loanAmt * 0.065 / 12).toLocaleString()}/month in interest. Even paying just this amount during school keeps your balance from growing.` : 'Calculate your monthly interest accrual: loan balance × interest rate ÷ 12. Pay at least this each month.',
+            'Contact your loan servicer and set up interest-only payments while in school — they\'re typically small but prevent capitalization.',
+            'After graduation, enroll in the SAVE income-driven repayment plan — it can significantly reduce monthly payments if your income is modest.',
+          ]
+        });
+      }
+    }
+
+    return spots;
+  }
+
+  // ── Render a blind spot card ───────────────────────────────
+  function renderCard(spot, index) {
+    const severityLabel = { critical: '⚠ Critical blind spot', warning: '⚡ Worth knowing', opportunity: '✓ Opportunity' };
+    const impactHTML = spot.impact
+      ? `<div class="bs-impact">
+          <span class="amount ${spot.impact.type}">${spot.impact.value}</span>
+          <span style="font-size:13px;color:var(--text-tertiary);font-weight:400;">${spot.impact.label}</span>
+        </div>`
+      : '';
+
+    return `
+      <div class="bs-card ${spot.severity}" id="bsc-${spot.id}" style="animation-delay:${index * 0.1}s;">
+        <div class="bs-header" onclick="toggleCard('${spot.id}')">
+          <div class="bs-icon ${spot.severity}"><i class="ti ${spot.icon}"></i></div>
+          <div class="bs-title-area">
+            <div class="bs-badge ${spot.severity}">${severityLabel[spot.severity]}</div>
+            <div class="bs-title">${spot.title}</div>
+            <div class="bs-summary">${spot.summary}</div>
+            ${impactHTML}
+          </div>
+          <i class="ti ti-chevron-down bs-chevron"></i>
+        </div>
+        <div class="bs-detail">
+          <div class="bs-detail-grid">
+            <div class="detail-block">
+              <div class="detail-block-label"><i class="ti ti-user" style="margin-right:4px;"></i>From your profile</div>
+              <div class="detail-block-text">${spot.fromProfile}</div>
+            </div>
+            <div class="detail-block">
+              <div class="detail-block-label"><i class="ti ti-file-text" style="margin-right:4px;"></i>From your document</div>
+              <div class="detail-block-text">${spot.fromDoc}</div>
+            </div>
+          </div>
+          <div class="bs-why-matters ${spot.severity}">
+            <strong>Why this matters</strong>
+            ${spot.whyMatters}
+          </div>
+          <div class="bs-actions-list">
+            ${spot.actions.map(a => `<div class="bs-action"><i class="ti ti-arrow-right"></i> ${a}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Score calculation ──────────────────────────────────────
+  function calcScore(spots) {
+    let score = 100;
+    spots.forEach(s => {
+      if (s.severity === 'critical') score -= 22;
+      else if (s.severity === 'warning') score -= 12;
+      else score -= 5;
+    });
+    return Math.max(10, Math.min(100, score));
+  }
+
+  function renderScore(score, spots) {
+    const circumference = 251.2;
+    const offset = circumference - (score / 100) * circumference;
+    const fill = document.getElementById('scoreRingFill');
+    const color = score >= 70 ? '#1D9E75' : score >= 45 ? '#EF9F27' : '#E24B4A';
+    fill.setAttribute('stroke', color);
+    setTimeout(() => { fill.style.strokeDashoffset = offset; }, 100);
+    document.getElementById('scoreNum').textContent = score;
+    document.getElementById('scoreNum').style.color = color;
+
+    const label = score >= 70 ? 'Good awareness' : score >= 45 ? 'Some blind spots' : 'High exposure';
+    document.getElementById('scoreLabel').textContent = label;
+    document.getElementById('scoreDesc').textContent =
+      score >= 70
+        ? 'You\'re in decent shape, but a few areas need attention. Review the insights below.'
+        : score >= 45
+        ? 'Your profile and document reveal several personalized risks worth addressing now.'
+        : 'We found significant gaps between your financial situation and what your document demands. Prioritize the critical items.';
+
+    const critCount = spots.filter(s => s.severity === 'critical').length;
+    const warnCount = spots.filter(s => s.severity === 'warning').length;
+    document.getElementById('scoreBreakdown').innerHTML = `
+      <div class="score-mini"><div class="sm-val" style="color:var(--red-600);">${critCount}</div><div class="sm-lbl">Critical</div></div>
+      <div class="score-mini"><div class="sm-val" style="color:var(--amber-600);">${warnCount}</div><div class="sm-lbl">Warnings</div></div>
+      <div class="score-mini"><div class="sm-val" style="color:var(--green-600);">${spots.length}</div><div class="sm-lbl">Total found</div></div>
+    `;
+  }
+
+  // ── Toggle expand ──────────────────────────────────────────
+  window.toggleCard = function(id) {
+    const card = document.getElementById('bsc-' + id);
+    card.classList.toggle('expanded');
+  };
+
+  // ── Run scan ───────────────────────────────────────────────
+  window.runScan = async function() {
+    document.getElementById('scanBtn').disabled = true;
+    document.getElementById('scanLoading').classList.add('visible');
+    document.getElementById('noDataState').style.display = 'none';
+
+    const steps = ['step1','step2','step3','step4','step5'];
+    for (let i = 0; i < steps.length; i++) {
+      await new Promise(r => setTimeout(r, 420));
+      if (i > 0) {
+        document.getElementById(steps[i-1]).classList.remove('active');
+        document.getElementById(steps[i-1]).classList.add('done');
+        document.getElementById(steps[i-1]).querySelector('i').className = 'ti ti-check';
+      }
+      document.getElementById(steps[i]).classList.add('active');
+    }
+
+    await new Promise(r => setTimeout(r, 500));
+    document.getElementById(steps[steps.length-1]).classList.remove('active');
+    document.getElementById(steps[steps.length-1]).classList.add('done');
+    document.getElementById(steps[steps.length-1]).querySelector('i').className = 'ti ti-check';
+
+    await new Promise(r => setTimeout(r, 300));
+
+    const spots = detectBlindSpots();
+    document.getElementById('scanLoading').classList.remove('visible');
+
+    if (spots.length === 0) {
+      document.getElementById('noDataState').style.display = 'block';
+      document.getElementById('noDataMsg').textContent = 'No significant blind spots detected for your profile and document combination. Try uploading a different document or updating your profile.';
+      document.querySelector('.no-data-actions').innerHTML = '<a href="./upload.html" class="btn btn-primary"><i class="ti ti-upload"></i> Upload another doc</a>';
+      return;
+    }
+
+    // Severity pills
+    const critCount = spots.filter(s => s.severity === 'critical').length;
+    const warnCount = spots.filter(s => s.severity === 'warning').length;
+    document.getElementById('severityPills').innerHTML = `
+      ${critCount ? `<div class="sev-pill critical"><i class="ti ti-alert-triangle"></i> ${critCount} Critical</div>` : ''}
+      ${warnCount ? `<div class="sev-pill warning"><i class="ti ti-alert-circle"></i> ${warnCount} Warning${warnCount > 1 ? 's' : ''}</div>` : ''}
+    `;
+
+    document.getElementById('resultsTitle').textContent = `${spots.length} blind spot${spots.length > 1 ? 's' : ''} found`;
+    document.getElementById('resultsSubtitle').textContent = `Personalized to your ${doc?.type || 'document'} and your profile`;
+
+    document.getElementById('blindSpotCards').innerHTML = spots.map((s, i) => renderCard(s, i)).join('');
+    renderScore(calcScore(spots), spots);
+
+    document.getElementById('resultsWrap').classList.add('visible');
+    // Auto-expand first critical
+    const firstCritical = spots.find(s => s.severity === 'critical');
+    if (firstCritical) {
+      setTimeout(() => document.getElementById('bsc-' + firstCritical.id)?.classList.add('expanded'), 400);
+    }
+
+    document.getElementById('scanBtn').disabled = false;
+    document.getElementById('scanBtn').innerHTML = '<i class="ti ti-refresh"></i> Re-run scan';
+  };
+</script>
+</body>
+</html>

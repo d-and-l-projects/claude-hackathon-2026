@@ -9,49 +9,154 @@
   <link rel="stylesheet" href="../styles/global.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <style>
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
-    .stat-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; }
-    .stat-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    /* ── Stats row ── */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 18px 20px; position: relative; overflow: hidden;
+    }
+    .stat-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    .stat-card.green::before { background: var(--green-600); }
+    .stat-card.red::before { background: var(--red-400); }
+    .stat-card.amber::before { background: var(--amber-400); }
+    .stat-card.blue::before { background: var(--blue-400); }
+    .stat-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
     .stat-label i { font-size: 14px; }
-    .stat-value { font-size: 26px; font-weight: 600; color: var(--text-primary); }
-    .stat-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+    .stat-value { font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1; letter-spacing: -0.5px; }
     .stat-card.green .stat-value { color: var(--green-600); }
     .stat-card.red .stat-value { color: var(--red-600); }
     .stat-card.amber .stat-value { color: var(--amber-800); }
+    .stat-card.blue .stat-value { color: var(--blue-600); }
+    .stat-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 5px; }
 
-    .content-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+    /* ── Main grid ── */
+    .dash-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
 
-    .doc-list { display: flex; flex-direction: column; gap: 10px; }
-    .doc-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.15s; text-decoration: none; color: inherit; }
+    /* ── Section headers ── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .section-header h2 { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+
+    /* ── Chart cards ── */
+    .chart-card {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 16px;
+    }
+    .chart-header {
+      padding: 14px 18px 12px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .chart-header h3 { font-size: 13px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+    .chart-header h3 i { color: var(--green-600); font-size: 15px; }
+    .chart-header .chart-meta { font-size: 11px; color: var(--text-tertiary); }
+    .chart-body { padding: 18px; }
+
+    /* ── Flags bar chart ── */
+    .flags-chart { display: flex; align-items: flex-end; gap: 8px; height: 80px; }
+    .flag-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .flag-bar-track { width: 100%; background: var(--bg-muted); border-radius: 4px 4px 0 0; height: 64px; display: flex; align-items: flex-end; }
+    .flag-bar-fill {
+      width: 100%; border-radius: 4px 4px 0 0;
+      transition: height 0.6s cubic-bezier(0.34,1.3,0.64,1);
+      min-height: 3px;
+    }
+    .flag-bar-fill.danger { background: var(--red-400); }
+    .flag-bar-fill.warn { background: var(--amber-400); }
+    .flag-bar-fill.none { background: var(--green-200); }
+    .flag-bar-label { font-size: 10px; color: var(--text-tertiary); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+    /* ── Goals ring chart ── */
+    .goals-section { display: flex; align-items: center; gap: 20px; }
+    .goals-ring-wrap { position: relative; flex-shrink: 0; }
+    .goals-ring { transform: rotate(-90deg); }
+    .goals-ring-bg { fill: none; stroke: var(--bg-muted); stroke-width: 10; }
+    .goals-ring-fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+    .goals-val {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%); text-align: center;
+    }
+    .goals-val .gv-num { font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+    .goals-val .gv-lbl { font-size: 10px; color: var(--text-tertiary); margin-top: 2px; }
+    .goals-list { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+    .goal-pill {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--text-secondary);
+      padding: 6px 10px; background: var(--bg-muted);
+      border-radius: var(--radius-md); border-left: 3px solid var(--green-200);
+    }
+    .goal-pill i { color: var(--green-600); font-size: 13px; flex-shrink: 0; }
+
+    /* ── Risk breakdown donut ── */
+    .risk-donut-wrap { display: flex; align-items: center; gap: 18px; }
+    .donut-svg { flex-shrink: 0; }
+    .donut-legend { display: flex; flex-direction: column; gap: 8px; }
+    .dl-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+    .dl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dl-dot.danger { background: var(--red-400); }
+    .dl-dot.warn { background: var(--amber-400); }
+    .dl-dot.good { background: var(--green-200); }
+    .dl-val { font-weight: 700; color: var(--text-primary); margin-left: auto; }
+
+    /* ── Income spark ── */
+    .income-spark { width: 100%; height: 48px; }
+
+    /* ── Doc history list ── */
+    .doc-list { display: flex; flex-direction: column; gap: 8px; }
+    .doc-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); cursor: pointer; transition: all 0.15s;
+      text-decoration: none; color: inherit;
+    }
     .doc-item:hover { border-color: var(--green-200); box-shadow: var(--shadow-sm); }
-    .doc-icon { width: 40px; height: 40px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+    .doc-icon { width: 38px; height: 38px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 17px; }
     .doc-icon.credit { background: var(--blue-50); color: var(--blue-600); }
     .doc-icon.paystub { background: var(--green-50); color: var(--green-600); }
     .doc-icon.loan { background: var(--amber-50); color: var(--amber-800); }
     .doc-icon.offer { background: #F3E8FF; color: #7C3AED; }
     .doc-icon.lease { background: var(--red-50); color: var(--red-600); }
     .doc-info { flex: 1; min-width: 0; }
-    .doc-name { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+    .doc-name { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .doc-meta { font-size: 11px; color: var(--text-tertiary); }
     .doc-flags { display: flex; gap: 5px; flex-shrink: 0; }
-    .doc-arrow { color: var(--text-tertiary); font-size: 16px; }
 
-    .quick-actions { display: flex; flex-direction: column; gap: 10px; }
-    .quick-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
-    .quick-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary); }
-    .quick-card p { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5; }
+    /* ── Right col ── */
+    .right-col { display: flex; flex-direction: column; gap: 16px; }
+    .panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .panel-header { padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+    .panel-header i { color: var(--green-600); font-size: 15px; }
+    .panel-body { padding: 14px 16px; }
 
-    .profile-summary { font-size: 12px; color: var(--text-secondary); line-height: 1.7; }
-    .profile-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); }
+    /* ── Profile rows ── */
+    .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); }
     .profile-row:last-child { border-bottom: none; }
-    .profile-row span { color: var(--text-primary); font-weight: 500; }
+    .profile-row span { color: var(--text-primary); font-weight: 500; font-size: 12px; text-align: right; max-width: 160px; }
 
-    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); }
-    .empty-state i { font-size: 36px; margin-bottom: 12px; display: block; }
-    .empty-state p { font-size: 13px; margin-bottom: 16px; }
+    /* ── Sample list ── */
+    .sample-link {
+      display: flex; align-items: center; gap: 10px; padding: 9px 10px;
+      border-radius: var(--radius-md); transition: background 0.12s;
+      cursor: pointer; text-decoration: none; color: inherit;
+    }
+    .sample-link:hover { background: var(--bg-muted); }
+    .sample-link .sl-icon { width: 30px; height: 30px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .sample-link .sl-name { font-size: 12px; font-weight: 500; color: var(--text-primary); flex: 1; }
 
-    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .section-header h2 { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 32px 16px; }
+    .empty-state i { font-size: 32px; color: var(--text-tertiary); display: block; margin-bottom: 10px; }
+    .empty-state p { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+
+    /* ── Awareness score bar (in right col) ── */
+    .awareness-bar-wrap { margin-top: 4px; }
+    .awareness-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .awareness-lbl { font-size: 11px; color: var(--text-secondary); width: 80px; flex-shrink: 0; }
+    .awareness-track { flex: 1; height: 7px; background: var(--bg-muted); border-radius: 4px; overflow: hidden; }
+    .awareness-fill { height: 100%; border-radius: 4px; }
+    .awareness-val { font-size: 11px; font-weight: 600; color: var(--text-primary); width: 28px; text-align: right; flex-shrink: 0; font-family: var(--font-mono); }
   </style>
 </head>
 <body>
@@ -62,7 +167,7 @@
     <div class="topbar">
       <div class="topbar-left">
         <h1 id="welcomeMsg">Your dashboard</h1>
-        <p>Overview of your financial documents and insights</p>
+        <p id="welcomeSub">Overview of your financial documents and insights</p>
       </div>
       <div class="topbar-right">
         <a href="./upload.html" class="btn btn-primary"><i class="ti ti-plus"></i> New document</a>
@@ -70,9 +175,10 @@
     </div>
 
     <div class="page-body">
-      <!-- Stats -->
+
+      <!-- Stats row -->
       <div class="stats-grid">
-        <div class="stat-card">
+        <div class="stat-card blue">
           <div class="stat-label"><i class="ti ti-files"></i> Documents</div>
           <div class="stat-value" id="statDocs">0</div>
           <div class="stat-sub">analyzed so far</div>
@@ -83,9 +189,9 @@
           <div class="stat-sub">found across docs</div>
         </div>
         <div class="stat-card green">
-          <div class="stat-label"><i class="ti ti-clock-dollar"></i> Est. savings</div>
-          <div class="stat-value" id="statSavings">—</div>
-          <div class="stat-sub">if you act on advice</div>
+          <div class="stat-label"><i class="ti ti-clock-dollar"></i> Est. at risk</div>
+          <div class="stat-value" id="statRisk">—</div>
+          <div class="stat-sub">if you don't act</div>
         </div>
         <div class="stat-card amber">
           <div class="stat-label"><i class="ti ti-target"></i> Goals set</div>
@@ -94,44 +200,128 @@
         </div>
       </div>
 
-      <div class="content-grid">
-        <!-- Left: doc history -->
-        <div>
-          <div class="section-header">
-            <h2>Recent documents</h2>
-            <a href="./upload.html" class="btn btn-secondary btn-sm"><i class="ti ti-upload"></i> Upload new</a>
-          </div>
-          <div class="doc-list" id="docList">
-            <div class="empty-state">
-              <i class="ti ti-file-off"></i>
-              <p>No documents yet. Upload your first one to get started.</p>
-              <a href="./upload.html" class="btn btn-primary"><i class="ti ti-upload"></i> Upload document</a>
-            </div>
-          </div>
-        </div>
+      <div class="dash-grid">
 
-        <!-- Right: quick actions + profile -->
-        <div class="quick-actions">
-          <div class="quick-card">
-            <h3>Your profile</h3>
-            <div id="profileSummary" class="profile-summary">
-              <div class="empty-state" style="padding:16px 0;">
-                <p>No profile yet. <a href="./onboarding.html" style="color:var(--green-600);">Complete onboarding →</a></p>
+        <!-- LEFT column -->
+        <div>
+
+          <!-- Red flags by document chart -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3><i class="ti ti-chart-bar"></i> Risk flags by document</h3>
+              <span class="chart-meta" id="flagsChartMeta">—</span>
+            </div>
+            <div class="chart-body">
+              <div class="flags-chart" id="flagsChart">
+                <div class="empty-state" style="width:100%;padding:16px 0;">
+                  <i class="ti ti-chart-bar" style="font-size:24px;"></i>
+                  <p>Upload documents to see your risk chart</p>
+                </div>
+              </div>
+              <!-- legend -->
+              <div style="display:flex;gap:16px;margin-top:12px;">
+                <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-tertiary);">
+                  <div style="width:10px;height:10px;border-radius:50%;background:var(--red-400);"></div> Red flags
+                </div>
+                <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-tertiary);">
+                  <div style="width:10px;height:10px;border-radius:50%;background:var(--amber-400);"></div> Warnings
+                </div>
+                <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-tertiary);">
+                  <div style="width:10px;height:10px;border-radius:50%;background:var(--green-200);"></div> Clean
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="quick-card">
-            <h3>Try a sample document</h3>
-            <p>See how FirstAdvisor analyzes real financial documents — no upload needed.</p>
-            <div style="display:flex; flex-direction:column; gap:7px;" id="sampleList"></div>
+          <!-- Goals ring + list -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3><i class="ti ti-target"></i> Your financial goals</h3>
+              <span class="chart-meta" id="goalsMeta">from onboarding</span>
+            </div>
+            <div class="chart-body">
+              <div class="goals-section" id="goalsSection">
+                <div class="empty-state" style="width:100%;padding:8px 0;">
+                  <i class="ti ti-target" style="font-size:24px;"></i>
+                  <p>Complete onboarding to set your goals</p>
+                  <a href="./onboarding.html" class="btn btn-primary btn-sm">Set goals →</a>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="quick-card" style="background: var(--green-50); border-color: var(--green-200);">
-            <h3 style="color:var(--green-800);">Future impact</h3>
-            <p style="color:var(--green-600);">See how your current financial choices compound over time.</p>
-            <a href="./visualizer.html" class="btn btn-primary btn-sm"><i class="ti ti-chart-arrows-vertical"></i> Open visualizer</a>
+          <!-- Risk type breakdown -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3><i class="ti ti-chart-donut"></i> Risk breakdown</h3>
+              <span class="chart-meta" id="donutMeta">across all documents</span>
+            </div>
+            <div class="chart-body">
+              <div class="risk-donut-wrap" id="donutWrap">
+                <div class="empty-state" style="width:100%;padding:8px 0;">
+                  <i class="ti ti-chart-donut" style="font-size:24px;"></i>
+                  <p>No documents analyzed yet</p>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <!-- Recent docs -->
+          <div>
+            <div class="section-header">
+              <h2>Recent documents</h2>
+              <a href="./upload.html" class="btn btn-secondary btn-sm"><i class="ti ti-upload"></i> Upload new</a>
+            </div>
+            <div class="doc-list" id="docList">
+              <div class="empty-state">
+                <i class="ti ti-file-off"></i>
+                <p>No documents yet. Upload your first one to get started.</p>
+                <a href="./upload.html" class="btn btn-primary"><i class="ti ti-upload"></i> Upload document</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT column -->
+        <div class="right-col">
+
+          <!-- Profile summary -->
+          <div class="panel">
+            <div class="panel-header"><i class="ti ti-user"></i> Your profile</div>
+            <div class="panel-body" id="profileSummary">
+              <div class="empty-state" style="padding:12px 0;">
+                <p>No profile yet.<br><a href="./onboarding.html" style="color:var(--green-600);">Complete onboarding →</a></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financial awareness bars -->
+          <div class="panel" id="awarenessPanel" style="display:none;">
+            <div class="panel-header"><i class="ti ti-radar"></i> Financial awareness</div>
+            <div class="panel-body">
+              <div class="awareness-bar-wrap" id="awarenessWrap"></div>
+              <div style="font-size:11px;color:var(--text-tertiary);margin-top:10px;">Based on your documents and profile. Upload more to improve accuracy.</div>
+            </div>
+          </div>
+
+          <!-- Try a sample -->
+          <div class="panel">
+            <div class="panel-header"><i class="ti ti-files"></i> Try a sample document</div>
+            <div class="panel-body" style="padding:8px;" id="sampleList"></div>
+          </div>
+
+          <!-- Future impact CTA -->
+          <div class="panel" style="background:var(--green-50);border-color:var(--green-200);">
+            <div class="panel-header" style="border-color:var(--green-200);color:var(--green-800);">
+              <i class="ti ti-chart-arrows-vertical" style="color:var(--green-600);"></i> Future impact
+            </div>
+            <div class="panel-body">
+              <p style="font-size:12px;color:var(--green-600);line-height:1.6;margin-bottom:12px;">See how your current financial choices compound over time — debt payoff, retirement, savings growth.</p>
+              <a href="./visualizer.html" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;"><i class="ti ti-trending-up"></i> Open visualizer</a>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -145,100 +335,270 @@
 
   renderSidebar('dashboard');
 
-  const currentUser = await requireAuth();
-  const profileCacheKey = uid => `firstAdvisor:${uid || 'demo'}:userProfile`;
-  const docsCacheKey = uid => `firstAdvisor:${uid || 'demo'}:docHistory`;
+  const profileCacheKey = uid => `firstAdvisor:${uid||'demo'}:userProfile`;
+  const docsCacheKey    = uid => `firstAdvisor:${uid||'demo'}:docHistory`;
+
   function readLocal(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || fallback); }
     catch { return JSON.parse(fallback); }
   }
 
-  // Welcome message
-  let profile = readLocal(profileCacheKey(currentUser?.uid), '{}');
-  if (currentUser) {
-    const savedProfile = await getProfile(currentUser.uid);
-    if (savedProfile?.profile) {
-      profile = savedProfile.profile;
-      localStorage.setItem(profileCacheKey(currentUser.uid), JSON.stringify(profile));
-      sessionStorage.setItem('userProfile', JSON.stringify(profile));
-    }
-  }
+  const currentUser = await requireAuth();
+
+  // ── Welcome message ──────────────────────────────────────
   try {
     const { onAuth } = await import('../firebase.js');
     onAuth(user => {
       if (user) {
         const first = (user.displayName || '').split(' ')[0];
-        if (first) document.getElementById('welcomeMsg').textContent = `Welcome back, ${first}`;
+        if (first) {
+          document.getElementById('welcomeMsg').textContent = `Welcome back, ${first}`;
+          document.getElementById('welcomeSub').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+        }
       }
     });
   } catch {}
 
-  // Profile summary
-  if (profile && profile.state) {
-    const goals = (profile.selectedGoals || []).join(', ') || 'None set';
-    const income = profile.wageType === 'salary'
-      ? profile.salary
-      : `${profile.hourlyRate}/hr · ${profile.hoursPerWeek} hrs/wk`;
-    document.getElementById('profileSummary').innerHTML = `
-      <div class="profile-row">Income <span>${income || '—'}</span></div>
-      <div class="profile-row">State <span>${profile.state || '—'}</span></div>
-      <div class="profile-row">Employment <span>${profile.empType || '—'}</span></div>
-      <div class="profile-row">Student loans <span>${profile.hasLoans ? 'Yes' : 'No'}</span></div>
-      <div class="profile-row">Goals <span style="text-align:right; max-width:160px;">${goals}</span></div>
-      <div style="margin-top:10px;"><a href="./onboarding.html" style="font-size:12px; color:var(--green-600);">Edit profile →</a></div>
-    `;
-    document.getElementById('statGoals').textContent = (profile.selectedGoals || []).length;
+  // ── Load profile ─────────────────────────────────────────
+  let profile = readLocal(profileCacheKey(currentUser?.uid), '{}');
+  if (currentUser) {
+    const saved = await getProfile(currentUser.uid);
+    if (saved?.profile) {
+      profile = saved.profile;
+      localStorage.setItem(profileCacheKey(currentUser.uid), JSON.stringify(profile));
+      sessionStorage.setItem('userProfile', JSON.stringify(profile));
+    }
   }
 
-  // Doc history from sessionStorage
+  // ── Load docs ─────────────────────────────────────────────
   let docs = readLocal(docsCacheKey(currentUser?.uid), '[]');
   if (currentUser) {
     docs = await getUserDocuments(currentUser.uid);
     localStorage.setItem(docsCacheKey(currentUser.uid), JSON.stringify(docs));
     sessionStorage.setItem('docHistory', JSON.stringify(docs));
   }
+
+  // ── Stats ─────────────────────────────────────────────────
+  document.getElementById('statDocs').textContent  = docs.length;
+  document.getElementById('statGoals').textContent = (profile.selectedGoals||[]).length;
+
+  const totalFlags = docs.reduce((a,d) => a+(d.flagCount||0), 0);
+  document.getElementById('statFlags').textContent = totalFlags;
+
+  // Estimate $ at risk: $300/flag is a rough but realistic proxy
+  if (totalFlags > 0) {
+    const atRisk = totalFlags * 300;
+    document.getElementById('statRisk').textContent = atRisk >= 1000 ? '$'+(atRisk/1000).toFixed(1)+'K' : '$'+atRisk;
+  }
+
+  // ── Profile summary ───────────────────────────────────────
+  if (profile && profile.state) {
+    const income = profile.wageType === 'salary'
+      ? (profile.salary || '—')
+      : `${profile.hourlyRate||'—'}/hr · ${profile.hoursPerWeek||'?'}h/wk`;
+    const goals = (profile.selectedGoals||[]).join(', ') || 'None set';
+    document.getElementById('profileSummary').innerHTML = `
+      <div class="profile-row">Income <span>${income}</span></div>
+      <div class="profile-row">State <span>${profile.state||'—'}</span></div>
+      <div class="profile-row">Employment <span>${profile.empType||'—'}</span></div>
+      <div class="profile-row">Age <span>${profile.age||'—'}</span></div>
+      <div class="profile-row">Student loans <span>${profile.hasLoans==='yes'?'Yes':'No'}</span></div>
+      <div class="profile-row">Benefits <span>${profile.hasBenefits==='yes'?'Yes':'No'}</span></div>
+      <div class="profile-row">Goals <span style="text-align:right;">${goals}</span></div>
+      <div style="margin-top:10px;">
+        <a href="./onboarding.html" style="font-size:12px;color:var(--green-600);">Edit profile →</a>
+      </div>
+    `;
+  }
+
+  // ── Flags bar chart ───────────────────────────────────────
   if (docs.length > 0) {
-    document.getElementById('statDocs').textContent = docs.length;
-    const totalFlags = docs.reduce((a, d) => a + (d.flagCount || 0), 0);
-    document.getElementById('statFlags').textContent = totalFlags;
-    const iconMap = { credit_card: 'credit', paystub: 'paystub', student_loan: 'loan', job_offer: 'offer', apartment_lease: 'lease' };
-    const iconIco = { credit_card: 'ti-credit-card', paystub: 'ti-file-dollar', student_loan: 'ti-school', job_offer: 'ti-briefcase', apartment_lease: 'ti-building' };
+    const chartDocs = docs.slice(0, 6); // show last 6
+    const maxFlags  = Math.max(...chartDocs.map(d => d.flagCount||0), 1);
+    document.getElementById('flagsChartMeta').textContent = `${docs.length} document${docs.length>1?'s':''} analyzed`;
+
+    document.getElementById('flagsChart').innerHTML = chartDocs.map(d => {
+      const flags   = d.flagCount || 0;
+      const heightPct = Math.max(5, Math.round((flags / maxFlags) * 100));
+      const cls     = flags === 0 ? 'none' : flags >= 3 ? 'danger' : 'warn';
+      const shortName = (d.name||d.type||'Doc').split(' ').slice(0,2).join(' ');
+      return `
+        <div class="flag-bar-wrap">
+          <div style="font-size:11px;font-weight:700;color:${flags===0?'var(--green-600)':flags>=3?'var(--red-600)':'var(--amber-800)'};">${flags}</div>
+          <div class="flag-bar-track">
+            <div class="flag-bar-fill ${cls}" style="height:${heightPct}%;"></div>
+          </div>
+          <div class="flag-bar-label" title="${d.name||''}">${shortName}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── Goals ring ────────────────────────────────────────────
+  const goalIcons = {
+    'Pay off debt':      'ti-arrows-minimize',
+    'Build savings':     'ti-piggy-bank',
+    'Start investing':   'ti-trending-up',
+    'Improve credit':    'ti-star',
+    'Buy a home':        'ti-home',
+    'Retire early':      'ti-sunset',
+    'Emergency fund':    'ti-lifebuoy',
+    'Budget better':     'ti-calculator',
+  };
+
+  const goals = profile.selectedGoals || [];
+  if (goals.length > 0) {
+    const circumference = 2 * Math.PI * 36; // r=36
+    // Each goal = one segment; show completion % based on docs uploaded / goals count
+    const completionPct = Math.min(100, Math.round((docs.length / Math.max(goals.length,1)) * 100));
+    const offset = circumference - (completionPct/100) * circumference;
+    const color = completionPct >= 60 ? 'var(--green-600)' : completionPct >= 30 ? 'var(--amber-400)' : 'var(--red-400)';
+
+    document.getElementById('goalsMeta').textContent = `${goals.length} goal${goals.length>1?'s':''} set`;
+    document.getElementById('goalsSection').innerHTML = `
+      <div class="goals-ring-wrap">
+        <svg class="goals-ring" width="90" height="90" viewBox="0 0 90 90">
+          <circle class="goals-ring-bg" cx="45" cy="45" r="36"/>
+          <circle class="goals-ring-fill" cx="45" cy="45" r="36"
+            stroke="${color}" stroke-dasharray="${circumference.toFixed(1)}"
+            stroke-dashoffset="${circumference.toFixed(1)}"
+            id="goalsRingFill"/>
+        </svg>
+        <div class="goals-val">
+          <div class="gv-num">${completionPct}%</div>
+          <div class="gv-lbl">active</div>
+        </div>
+      </div>
+      <div class="goals-list">
+        ${goals.slice(0,5).map(g => `
+          <div class="goal-pill">
+            <i class="ti ${goalIcons[g]||'ti-check'}"></i>
+            ${g}
+          </div>
+        `).join('')}
+        ${goals.length > 5 ? `<div style="font-size:11px;color:var(--text-tertiary);padding-left:10px;">+${goals.length-5} more</div>` : ''}
+      </div>
+    `;
+    // animate ring
+    setTimeout(() => {
+      const fill = document.getElementById('goalsRingFill');
+      if (fill) fill.style.strokeDashoffset = offset.toFixed(1);
+    }, 200);
+  }
+
+  // ── Risk donut ────────────────────────────────────────────
+  if (docs.length > 0) {
+    // count from docHistory — flagCount is danger, estimate warns as flagCount*0.6
+    const totalDanger = docs.reduce((a,d) => a+(d.flagCount||0), 0);
+    const totalWarn   = Math.round(totalDanger * 0.7);
+    const totalGood   = docs.length * 2; // assume ~2 positive terms per doc
+    const total       = totalDanger + totalWarn + totalGood || 1;
+
+    const dangerPct = totalDanger / total;
+    const warnPct   = totalWarn   / total;
+    const goodPct   = totalGood   / total;
+
+    // Build SVG donut (cx=50,cy=50,r=38, strokeWidth=18)
+    const r = 38, cx = 50, cy = 50, sw = 18;
+    const circ = 2 * Math.PI * r;
+
+    function segment(pct, offset, color) {
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+        stroke="${color}" stroke-width="${sw}"
+        stroke-dasharray="${(pct*circ).toFixed(2)} ${circ.toFixed(2)}"
+        stroke-dashoffset="${(-offset*circ).toFixed(2)}"
+        transform="rotate(-90 ${cx} ${cy})"/>`;
+    }
+
+    document.getElementById('donutMeta').textContent = `${total} terms flagged`;
+    document.getElementById('donutWrap').innerHTML = `
+      <svg class="donut-svg" width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--bg-muted)" stroke-width="${sw}"/>
+        ${segment(dangerPct, 0,         'var(--red-400)')}
+        ${segment(warnPct,   dangerPct, 'var(--amber-400)')}
+        ${segment(goodPct,   dangerPct+warnPct, 'var(--green-200)')}
+        <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-primary)">${total}</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="dl-item"><div class="dl-dot danger"></div>Red flags <span class="dl-val">${totalDanger}</span></div>
+        <div class="dl-item"><div class="dl-dot warn"></div>Warnings <span class="dl-val">${totalWarn}</span></div>
+        <div class="dl-item"><div class="dl-dot good"></div>Positive <span class="dl-val">${totalGood}</span></div>
+      </div>
+    `;
+  }
+
+  // ── Financial awareness bars ──────────────────────────────
+  if (docs.length > 0 || profile.state) {
+    document.getElementById('awarenessPanel').style.display = 'block';
+
+    const hasIncome    = !!(profile.salary || profile.hourlyRate);
+    const hasState     = !!profile.state;
+    const hasGoals     = (profile.selectedGoals||[]).length > 0;
+    const hasDocs      = docs.length > 0;
+    const hasLowFlags  = totalFlags === 0 || (docs.length > 0 && totalFlags / docs.length < 2);
+
+    const bars = [
+      { label:'Profile',    pct: [hasIncome, hasState, profile.age, profile.empType].filter(Boolean).length / 4 * 100, color:'var(--blue-400)' },
+      { label:'Goals',      pct: Math.min(100, goals.length / 3 * 100), color:'var(--green-600)' },
+      { label:'Docs',       pct: Math.min(100, docs.length / 3 * 100), color:'var(--amber-400)' },
+      { label:'Risk score', pct: hasLowFlags ? 80 : Math.max(20, 100 - (totalFlags/Math.max(docs.length,1))*20), color: hasLowFlags ? 'var(--green-600)' : 'var(--red-400)' },
+    ];
+
+    document.getElementById('awarenessWrap').innerHTML = bars.map(b => `
+      <div class="awareness-row">
+        <div class="awareness-lbl">${b.label}</div>
+        <div class="awareness-track">
+          <div class="awareness-fill" style="width:${Math.round(b.pct)}%;background:${b.color};transition:width 0.8s ease;"></div>
+        </div>
+        <div class="awareness-val">${Math.round(b.pct)}%</div>
+      </div>
+    `).join('');
+  }
+
+  // ── Doc list ──────────────────────────────────────────────
+  if (docs.length > 0) {
+    const iconMap = { credit_card:'credit', paystub:'paystub', student_loan:'loan', job_offer:'offer', apartment_lease:'lease' };
+    const icoIco  = { credit_card:'ti-credit-card', paystub:'ti-file-dollar', student_loan:'ti-school', job_offer:'ti-briefcase', apartment_lease:'ti-building' };
+
     document.getElementById('docList').innerHTML = docs.map(d => {
-      const docKey = d.docKey || d.id;
+      const docKey   = d.docKey || d.id;
       const activeId = d.firestoreId || docKey;
       const analysisScript = d.analysis
         ? `sessionStorage.setItem('aiAnalysis', decodeURIComponent('${encodeURIComponent(JSON.stringify(d.analysis))}'))`
         : `sessionStorage.removeItem('aiAnalysis')`;
-      const safeFileName = String(d.filename || d.name || '').replace(/'/g, "\\'");
+      const safeFileName = String(d.filename||d.name||'').replace(/'/g,"\\'");
       return `
-      <a class="doc-item" href="./analysis.html?doc=${activeId}" onclick="sessionStorage.setItem('activeDoc','${activeId}'); sessionStorage.setItem('activeDocKey','${docKey}'); sessionStorage.setItem('uploadedFileName','${safeFileName}'); ${analysisScript}">
-        <div class="doc-icon ${iconMap[docKey] || 'credit'}"><i class="ti ${iconIco[docKey] || 'ti-file'}"></i></div>
-        <div class="doc-info">
-          <div class="doc-name">${d.name}</div>
-          <div class="doc-meta">${d.type} · ${d.date || 'Today'}</div>
-        </div>
-        <div class="doc-flags">
-          ${d.flagCount > 0 ? `<span class="badge badge-red"><i class="ti ti-alert-triangle"></i> ${d.flagCount}</span>` : ''}
-        </div>
-        <i class="ti ti-chevron-right doc-arrow"></i>
-      </a>`;
+        <a class="doc-item" href="./analysis.html?doc=${activeId}"
+           onclick="sessionStorage.setItem('activeDoc','${activeId}');sessionStorage.setItem('activeDocKey','${docKey}');sessionStorage.setItem('uploadedFileName','${safeFileName}');${analysisScript}">
+          <div class="doc-icon ${iconMap[docKey]||'credit'}"><i class="ti ${icoIco[docKey]||'ti-file'}"></i></div>
+          <div class="doc-info">
+            <div class="doc-name">${d.name||d.type||'Document'}</div>
+            <div class="doc-meta">${d.type||''} · ${d.date||'Today'}</div>
+          </div>
+          <div class="doc-flags">
+            ${(d.flagCount||0)>0 ? `<span class="badge badge-red"><i class="ti ti-alert-triangle"></i> ${d.flagCount}</span>` : '<span class="badge badge-green">Clean</span>'}
+          </div>
+          <i class="ti ti-chevron-right" style="color:var(--text-tertiary);font-size:15px;"></i>
+        </a>`;
     }).join('');
   }
 
-  // Sample list
-  const samples = Object.values(SAMPLE_DOCUMENTS);
-  document.getElementById('sampleList').innerHTML = samples.map(s => `
-    <a class="doc-item" href="./analysis.html" style="padding:10px 12px;"
-       onclick="sessionStorage.setItem('activeDoc','${s.id}'); sessionStorage.setItem('activeDocKey','${s.id}'); sessionStorage.setItem('activeDocSample','true'); sessionStorage.removeItem('aiAnalysis')">
-      <div class="doc-icon ${s.id === 'credit_card' ? 'credit' : s.id === 'paystub' ? 'paystub' : s.id === 'student_loan' ? 'loan' : s.id === 'job_offer' ? 'offer' : 'lease'}" style="width:32px;height:32px;font-size:14px;">
-        <i class="ti ${s.icon}"></i>
-      </div>
-      <div class="doc-info">
-        <div class="doc-name" style="font-size:12px;">${s.name}</div>
-      </div>
-      <span class="badge badge-green" style="font-size:10px;">${s.badge}</span>
-    </a>
-  `).join('');
+  // ── Sample list ───────────────────────────────────────────
+  const slIconMap = { credit_card:'credit', paystub:'paystub', student_loan:'loan', job_offer:'offer', apartment_lease:'lease' };
+  const slIcoMap  = { credit_card:'ti-credit-card', paystub:'ti-file-dollar', student_loan:'ti-school', job_offer:'ti-briefcase', apartment_lease:'ti-building' };
+  const slBgMap   = { credit:'var(--blue-50)', paystub:'var(--green-50)', loan:'var(--amber-50)', offer:'#F3E8FF', lease:'var(--red-50)' };
+  const slColMap  = { credit:'var(--blue-600)', paystub:'var(--green-600)', loan:'var(--amber-800)', offer:'#7C3AED', lease:'var(--red-600)' };
+
+  document.getElementById('sampleList').innerHTML = Object.values(SAMPLE_DOCUMENTS).map(s => {
+    const cls = slIconMap[s.id]||'credit';
+    return `
+      <a class="sample-link" href="./analysis.html"
+         onclick="sessionStorage.setItem('activeDoc','${s.id}');sessionStorage.setItem('activeDocKey','${s.id}');sessionStorage.removeItem('aiAnalysis');">
+        <div class="sl-icon" style="background:${slBgMap[cls]};color:${slColMap[cls]};"><i class="ti ${s.icon}"></i></div>
+        <div class="sl-name">${s.name}</div>
+        <span class="badge badge-green" style="font-size:10px;">${s.badge||'Try'}</span>
+      </a>`;
+  }).join('');
 </script>
 </body>
 </html>

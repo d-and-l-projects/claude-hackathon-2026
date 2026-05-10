@@ -131,8 +131,12 @@ const firebaseConfig = {
   ...
 };
 ```
+---
 
-Full setup details in [`SETUP.md`](./SETUP.md).
+## License
+
+MIT — do whatever you want with it, just don't use it to give people bad financial advice.
+
 
 ---
 
